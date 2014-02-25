@@ -46,7 +46,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" aviewBox="0 0 500 500" id="glyphsvg">
             <path id="p" stroke="#aef" stroke-width="2" fill="none" pointer-events="none"/>
         </svg>
-        <div class="btn" onclick="showNextGlyph()">NEXT</div>
+        <div class="btn" onclick="showNextGlyph()" id="nextBtn">NEXT</div>
             <script>
                 var r = document.getElementById('glyphsvg'),
                     p = document.getElementById('p'),
@@ -93,15 +93,27 @@
                     }
                     return rules;
                 };
-                function css_getclass(name) {
+                function css_getclassOld(name) {
                     var rules = cssrules();
                     if (!rules.hasOwnProperty(name)) throw 'todo:deal_with_notfound_case';
                     return rules[name];
                 };
+                
+                function css_getclass(name) {
+                    var ds = document.styleSheets;
+                    for (var i = 0, dsl = ds.length; i < dsl; ++i) {
+                        var dsi = ds[i].cssRules;
+                        for (var j = 0, dsil = dsi.length; j < dsil; ++j) {
+                            if (dsi[j].selectorText == name)
+                                return dsi[j];
+                        }
+                    }
+                    return null;
+                };
 
                 window.onload = function() {
                     var w = document.getElementById('adiv').offsetWidth;
-                    var h = w * 518 / 500;
+                    var h = Math.round(w * 518 / 500);
                     console.log(w);
                     r.style.width = w + 'px';
                     r.style.height = h + 'px';
@@ -109,7 +121,6 @@
                     cutoff = Math.pow(w * 30.0 / 500.0, 2);
                     var winh = window.innerHeight;
                     console.log('winh: ' + winh);
-                    document.getElementById('spacer').style.height = '285px';
 
                     for (var t in targets) {
                         targets[t].x *= w / 500.0;
@@ -118,6 +129,7 @@
 
                     p.style.strokeWidth = Math.round(w / 50);
                     txt.style.fontSize = Math.round(w / 10) + 'px';
+                    var txth = txt.offsetHeight;
                     
                     for (var g in glyphs) {
                         glyphs[g].strokes = {};
@@ -133,6 +145,16 @@
                     var btnstyle = css_getclass('.btn').style;
                     btnstyle.fontSize = Math.round(z / 3) + 'px';
                     btnstyle.padding = Math.round(z / 3) + 'px';
+                    var btnh = document.getElementById('nextBtn').offsetHeight;
+
+                    console.log('winh: ' + winh + ', btnh: ' + btnh + ', ' + ', txth: ' + txth);
+                    console.log('toth: ' + (btnh + txth + h));
+                    console.log('left: ' + (winh - (btnh + txth + h)));
+
+
+                    //document.getElementById('spacer').style.height = '285px';
+                    
+                    document.getElementById('spacer').style.height = (winh-(btnh + txth + h)-30) + 'px';
                 };
 
                 function isTouchEvent(e) {
