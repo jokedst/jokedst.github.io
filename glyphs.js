@@ -106,6 +106,6 @@ var glyphs = [
 {name:['Want'], points:[8,6,10,7]},
 {name:['We', 'Us'], points:[3,4,10]},
 {name:['Weak'], points:[1,3,4,7]},
-{name:['XM (Exotic Matter)'], points:[3,4,7,5,6,3]},
+{name:['XM'], points:[3,4,7,5,6,3]},
 {name:['You', 'Other'], points:[0,6,7,0]}
 ];
