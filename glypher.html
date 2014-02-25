@@ -111,17 +111,26 @@
                     return null;
                 };
 
-                window.onload = function() {
+                window.onload = function () {
+                    // This is a bunch of 'adapt to resolution' crap. Works sometimes :)
                     var w = document.getElementById('adiv').offsetWidth;
                     var h = Math.round(w * 518 / 500);
+                    var winh = window.innerHeight;
+                    
+                    if (winh < h * 1.2) {
+                        // Landscape-ish
+                        w = Math.round(winh *0.8 * 500 / 518);
+                        var h = Math.round(w * 518 / 500);
+                    }
+
                     console.log(w);
                     r.style.width = w + 'px';
                     r.style.height = h + 'px';
                     // The cutoff is squared to avoid sqrt later
                     cutoff = Math.pow(w * 30.0 / 500.0, 2);
-                    var winh = window.innerHeight;
                     console.log('winh: ' + winh);
 
+                    // Scale the target locations to new resolution
                     for (var t in targets) {
                         targets[t].x *= w / 500.0;
                         targets[t].y *= w / 500.0;
