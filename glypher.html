@@ -71,7 +71,8 @@
                     okcolor = { r: 50, g: 255, b: 50 },
                     badcolor = { r: 255, g: 50, b: 50 };
                 var strokes = {};
-                var glyph = null;
+                var glyph = null,
+                    glyphsShown = 0;
                 
                 function interpolateColor(from, to, delta) {
                     var red = Math.round((from.r * (1.0 - delta)) + (to.r * delta));
@@ -164,7 +165,13 @@
 
                     //document.getElementById('spacer').style.height = '285px';
                     
-                    document.getElementById('spacer').style.height = (winh-(btnh + txth + h)-30) + 'px';
+                    document.getElementById('spacer').style.height = (winh - (btnh + txth + h) - 30) + 'px';
+                    
+
+                    // Test: sort glyphs by number of points
+                    //glyphs.sort(function (a, b) { return a.points.length - b.points.length });
+                    //for (var g in glyphs)
+                    //    console.log(glyphs[g].name[0] + ' : ' + glyphs[g].points.length);
                 };
 
                 function isTouchEvent(e) {
@@ -427,7 +434,8 @@
 
                     if (glyph != null) {
                         console.log('found ' + glyph.name[0]);
-                        txt.textContent = glyph.name[0].toUpperCase();
+                        var nameIndex = glyphsShown++ % glyph.name.length;
+                        txt.textContent = glyph.name[nameIndex].toUpperCase();
                     } else {
                         txt.textContent = 'UNKNOWN';
                     }
@@ -446,10 +454,11 @@
                 }
                 
                 function showNextGlyph() {
-                    var index = Math.floor((Math.random() * glyphs.length));
+                    //var index = Math.floor((Math.random() * glyphs.length));
+                    var index = glyphsShown % glyphs.length;
                     glyph = glyphs[index];
                     console.log('random glyph ' + index + ': ' + glyph);
-                    txt.textContent = glyph.name[0].toUpperCase();
+                    txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
                     points = [];
                     for (var i = 0; i < glyph.points.length; i++) {
                         points.push(targets[glyph.points[i]]);
