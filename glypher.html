@@ -42,7 +42,7 @@
 </head>
     <body>
         <div id="spacer"></div>
-        <div style="background: #000" width="100%" id="adiv">UNKNOWN</div>
+        <div style="background: #000" width="100%" id="adiv" onclick="textClick()">UNKNOWN</div>
         <!-- based on http://mcc.id.au/2010/signature.html -->
         <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" aviewBox="0 0 500 500" id="glyphsvg">
             <path id="p" stroke="#aef" stroke-width="2" fill="none" pointer-events="none"/>
@@ -466,6 +466,12 @@
                     p.setAttribute('d', points2path(0, points.length));
                     p.setAttribute('stroke', obj2col(okcolor));
                 }
+				
+				function textClick(){
+					if(glyph != null && glyph.name.length > 1){
+						txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
+					}
+				}
 
                 r.addEventListener('mousedown', down, false);
                 r.addEventListener('mousemove', move, false);
