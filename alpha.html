@@ -330,7 +330,7 @@
 								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
 									if(t != lastTouchedTarget)
 										lastTouchedTarget = t;
-										vibrate([100]);
+										navigator.vibrate([100]);
 										break;
 								}
 							}
