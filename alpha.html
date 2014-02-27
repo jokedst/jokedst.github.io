@@ -315,23 +315,24 @@
                     if (isDown) {
                         var point = getCoords(e);
 						
-						// Is it on a new target?
-						if(vibrateOn && vibrate){
-							for (var t in targets) {
-								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
-									if(t != lastTouchedTarget)
-										vibrate(100);
-										break;
-								}
-							}
-						}
-						
                         points.push(point);
                         drawnPath += 'L' + point.x + ',' + point.y + ' ';
                         //drawnPath += 'L' + getCoords(e, this) + ' ';
                         //p.setAttribute('d', points2path(0, points.length));
                         //console.log(drawnPath);
                         p.setAttribute('d', drawnPath);
+						
+						// Is it on a new target?
+						if(vibrateOn && vibrate){
+							for (var t in targets) {
+								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
+									if(t != lastTouchedTarget)
+										lastTouchedTarget = t;
+										vibrate(100);
+										break;
+								}
+							}
+						}
                     }
 
                     if (isTouchEvent(e))
