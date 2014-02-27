@@ -61,9 +61,11 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" aviewBox="0 0 500 500" id="glyphsvg">
             <path id="p" stroke="#aef" stroke-width="2" fill="none" pointer-events="none"/>
         </svg>
+		<div>
         <div class="btn" onclick="showNextGlyph()" id="nextBtn">NEXT</div>
         <div class="btn" onclick="showThisGlyph()" id="showButton">SHOW</div>
         <div class="btn" onclick="showLessons()" id="lessonsButton" style="float: left">LESSONS</div>
+		</div>
         <div id='LessonsDiv'>
             <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
             <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
@@ -139,13 +141,7 @@
                     return null;
                 };
 
-                window.onload = function () {
-					// DEBUG: Check if vibrate exists
-					var vibn = navigator.vibrate ? true : false;
-					var mozvib = navigator.mozVibrate ? true : false;
-					var wkvib = navigator.webkitVibrate ? true : false;
-					alert('native vibrate: '+vibn+'\nmozvib: '+mozvib+'\nwebkit: '+wkvib+'\nvib: '+(vibrate?true:false));
-				
+                window.onload = function () {				
                     // This is a bunch of 'adapt to resolution' crap. Works sometimes :)
                     var w = document.getElementById('adiv').offsetWidth;
                     var h = Math.round(w * 518 / 500);
@@ -328,7 +324,7 @@
                         //console.log(drawnPath);
                         p.setAttribute('d', drawnPath);
 						
-						// Is it on a new target?
+						// Is it on a new target? If so, vibrate.
 						if(vibrateOn && vibrate){
 							for (var t in targets) {
 								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
@@ -505,7 +501,7 @@
                     p.setAttribute('d', points2path(0, points.length));
                     p.setAttribute('stroke', obj2col(okcolor));
 					
-					if(vibrate)vibrate(500);
+					navigator.vibrate([500]);
                 }
 				
 				function textClick(){
