@@ -97,6 +97,7 @@
                     glyphsShown = 0;
 				var lastTouchedTarget = -1,
 					vibrateOn = true;
+				var vibrate = navigator.vibrate || navigator.mozVibrate || navigator.webkitVibrate || null;
                 
                 function interpolateColor(from, to, delta) {
                     var red = Math.round((from.r * (1.0 - delta)) + (to.r * delta));
@@ -314,11 +315,11 @@
                         var point = getCoords(e);
 						
 						// Is it on a new target?
-						if(vibrateOn && Navigator && Navigator.vibrate){
+						if(vibrateOn && vibrate){
 							for (var t in targets) {
 								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
 									if(t != lastTouchedTarget)
-										Navigator.vibrate(100);
+										vibrate(100);
 								}
 							}
 						}
