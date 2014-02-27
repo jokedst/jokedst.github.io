@@ -1,0 +1,561 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Glyph learner</title>
+	<meta name="viewport" content="width=device-width, user-scalable=no">
+    <link rel='shortcut icon' type='image/x-icon' href='glyph.ico' />
+    <script src="glyphs.js"></script>
+    <style>
+        body {
+            background-color: #000;
+        }
+        svg {
+            background: url("background.png");
+            background-size: contain;
+            position: relative;
+        }
+
+        #adiv {
+            background-color: #000;
+            color: #6be7c5;
+            font-size: 20pt;
+            text-align: center;
+            font-family: sans-serif;
+            font-weight: bold;
+        }
+        path {
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .btn {
+            border: solid 3px #00f3ff;
+            background-color: #19454a;
+            color: #8cffff;
+            padding: 30px;
+            float: right;
+            font-size: 40pt;
+            font-family: sans-serif;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .lbtn {
+            border: solid 3px #00f3ff;
+            background-color: #19454a;
+            color: #8cffff;
+            padding: 1px;
+            font-size: 1pt;
+            font-family: sans-serif;
+            font-weight: bold;
+            width: 100%;
+            margin: 3px;
+        }
+
+    </style>
+</head>
+    <body>
+        <div id="spacer"></div>
+        <div style="background: #000" width="100%" id="adiv" onclick="textClick()">UNKNOWN</div>
+        <!-- based on http://mcc.id.au/2010/signature.html -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" aviewBox="0 0 500 500" id="glyphsvg">
+            <path id="p" stroke="#aef" stroke-width="2" fill="none" pointer-events="none"/>
+        </svg>
+        <div class="btn" onclick="showNextGlyph()" id="nextBtn">NEXT</div>
+        <div class="btn" onclick="showThisGlyph()" id="showButton">SHOW</div>
+        <div class="btn" onclick="showLessons()" id="lessonsButton" style="float: left">LESSONS</div>
+        <div id='LessonsDiv'>
+            <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
+            <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
+            <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
+            <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
+            <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
+        </div>
+            <script>
+                var r = document.getElementById('glyphsvg'),
+                    p = document.getElementById('p'),
+                    txt = document.getElementById('adiv'),
+                    drawnPath = '',
+                    isDown = false,
+                    points = [], starti=0, stopi=0,
+                    cutoff = 1000;
+                var targets = [{ x: 250, y: 30 },
+                               { x: 54, y: 143 },
+                               { x: 446, y: 143 },
+                               { x: 152, y: 200 },
+                               { x: 348, y: 200 },
+                               { x: 250, y: 257 },
+                               { x: 152, y: 313 },
+                               { x: 348, y: 313 },
+                               { x: 54, y: 370 },
+                               { x: 446, y: 370 },
+                               { x: 250, y: 483 }];
+                var drawcolor = { r: 255, g: 255, b: 0 },
+                    okcolor = { r: 50, g: 255, b: 50 },
+                    badcolor = { r: 255, g: 50, b: 50 };
+                var strokes = {};
+                var glyph = null,
+                    glyphsShown = 0;
+				var lastTouchedTarget = -1,
+					vibrateOn = true;
+                
+                function interpolateColor(from, to, delta) {
+                    var red = Math.round((from.r * (1.0 - delta)) + (to.r * delta));
+                    var green = Math.round((from.g * (1.0 - delta)) + (to.g * delta));
+                    var blue = Math.round((from.b * (1.0 - delta)) + (to.b * delta));
+                    return 'rgb(' + red + ',' + green + ',' + blue + ')';
+                }
+                
+                function obj2col(color) {
+                    var s = 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
+                    console.log(s);
+                    return s;
+                }
+                
+                function cssrules() {
+                    var rules = {}; var ds = document.styleSheets, dsl = ds.length;
+                    for (var i = 0; i < dsl; ++i) {
+                        var dsi = ds[i].cssRules, dsil = dsi.length;
+                        for (var j = 0; j < dsil; ++j) rules[dsi[j].selectorText] = dsi[j];
+                    }
+                    return rules;
+                };
+                function css_getclassOld(name) {
+                    var rules = cssrules();
+                    if (!rules.hasOwnProperty(name)) throw 'todo:deal_with_notfound_case';
+                    return rules[name];
+                };
+                
+                function css_getclass(name) {
+                    var ds = document.styleSheets;
+                    for (var i = 0, dsl = ds.length; i < dsl; ++i) {
+                        var dsi = ds[i].cssRules;
+                        for (var j = 0, dsil = dsi.length; j < dsil; ++j) {
+                            if (dsi[j].selectorText == name)
+                                return dsi[j];
+                        }
+                    }
+                    return null;
+                };
+
+                window.onload = function () {
+                    // This is a bunch of 'adapt to resolution' crap. Works sometimes :)
+                    var w = document.getElementById('adiv').offsetWidth;
+                    var h = Math.round(w * 518 / 500);
+                    var winh = window.innerHeight;
+                    
+                    // Detect landscape view
+                    if (winh < h * 1.2) {
+                        w = Math.round(winh *0.8 * 500 / 518);
+                        h = Math.round(w * 518 / 500);
+                    }
+
+                    console.log(w);
+                    r.style.width = w + 'px';
+                    r.style.height = h + 'px';
+                    // The cutoff is squared to avoid sqrt later
+                    cutoff = Math.pow(w * 30.0 / 500.0, 2);
+                    console.log('winh: ' + winh);
+
+                    // Scale the target locations to new resolution
+                    for (var t in targets) {
+                        targets[t].x *= w / 500.0;
+                        targets[t].y *= w / 500.0;
+                    }
+
+                    p.style.strokeWidth = Math.round(w / 50);
+                    txt.style.fontSize = Math.round(w / 10) + 'px';
+                    var txth = txt.offsetHeight;
+                    
+                    // Figure out shich strokes make up each glyph (e.g. 'f1t4' = from 1 to 4)
+                    for (var g in glyphs) {
+                        glyphs[g].strokes = {};
+                        var lastt = glyphs[g].points[0];
+                        for (var i = 1; i < glyphs[g].points.length; i++) {
+                            var next = glyphs[g].points[i];
+                            // To avoid dupes always take lowest number fist
+                            glyphs[g].strokes['f' + Math.min(lastt, next) + 't' + Math.max(lastt, next)] = 1;
+                            lastt = next;
+                        }
+                    }
+
+                    var z = w * 0.128;
+                    var btnstyle = css_getclass('.btn').style;
+                    btnstyle.fontSize = Math.round(z / 3) + 'px';
+                    btnstyle.padding = Math.round(z / 3) + 'px';
+                    var btnh = document.getElementById('nextBtn').offsetHeight;
+
+                    console.log('winh: ' + winh + ', btnh: ' + btnh + ', ' + ', txth: ' + txth);
+                    console.log('toth: ' + (btnh + txth + h));
+                    console.log('left: ' + (winh - (btnh + txth + h)));
+                    
+                    document.getElementById('spacer').style.height = (winh - (btnh + txth + h) - 30) + 'px';
+                };
+
+                function isTouchEvent(e) {
+                    return e.type.match(/^touch/);
+                }
+                
+                function _pointOnLine(line1, line2, pt) {
+                    var isValid = false;
+
+                    var ret = { x: 0, y: 0 };
+                    
+                    // handle straight lines specially
+                    if (line1.x == line2.x) {
+                        ret = { x: line1.x, y: pt.y };
+                    } else if (line1.y == line2.y) {
+                        ret = { x: pt.x, y: line1.y };
+                    } else {
+                        var u = ((pt.x - line1.x) * (line2.x - line1.x)) + ((pt.y - line1.y) * (line2.y - line1.y));
+
+                        var udenom = Math.pow(line2.x - line1.x, 2) + Math.pow(line2.y - line1.y, 2);
+
+                        u /= udenom;
+
+                        ret.x = line1.x + (u * (line2.x - line1.x));
+                        ret.y = line1.y + (u * (line2.y - line1.y));
+                    }
+                    
+                    // if point is outside line segment, move to closest endpoint
+                    if (line1.x < line2.x) {
+                        if (ret.x < line1.x) {
+                            return { x: line1.x, y: line1.y };
+                        }
+                        if (ret.x > line2.x) {
+                            return { x: line2.x, y: line2.y };
+                        }
+                    } else if (line1.x > line2.x) {
+                        if (ret.x > line1.x) {
+                            return { x: line1.x, y: line1.y };
+                        }
+                        if (ret.x < line2.x) {
+                            return { x: line2.x, y: line2.y };
+                        }
+                    }
+                    if (line1.y < line2.y) {
+                        if (ret.y < line1.y) {
+                            return { x: line1.x, y: line1.y };
+                        }
+                        if (ret.y > line2.y) {
+                            return { x: line2.x, y: line2.y };
+                        }
+                    } else if (line1.y > line2.y) {
+                        if (ret.y > line1.y) {
+                            return { x: line1.x, y: line1.y };
+                        }
+                        if (ret.y < line2.y) {
+                            return { x: line2.x, y: line2.y };
+                        }
+                    }
+                    
+                    return ret;
+                    
+                    // This below if you want to send NULL if the point is outside the line
+                    //var minx, maxx, miny, maxy;
+                    //minx = Math.min(line1.x, line2.x);
+                    //maxx = Math.max(line1.x, line2.x);
+                    //miny = Math.min(line1.y, line2.y);
+                    //maxy = Math.max(line1.y, line2.y);
+                    //// if outside the segment, move inside
+                    //if (ret.x >= minx && ret.x <= maxx) {
+                    //    // TODO
+                    //}
+                    //isValid = (ret.x >= minx && ret.x <= maxx) && (ret.y >= miny && ret.y <= maxy);
+                    //return isValid ? ret : null;
+                }
+
+                function points2path(start, end, verbose) {
+                    if (verbose) console.log('p2p s:' + start + " e:" + end);
+                    if (start >= end) return '';
+                    var ret = '', first = true;
+                    var lastp = { x: -1, y: -1 };
+                    for (var i = start; i < end; i++) {
+                        if (first)
+                            ret += 'M' + points[i].x + ',' + points[i].y + ' ';
+                        else {
+                            if (points[i].x != lastp.x || points[i].y != lastp.y)
+                                ret += 'L' + points[i].x + ',' + points[i].y + ' ';
+                        }
+                        lastp = points[i];
+                        first = false;
+                    }
+                    if(verbose)console.log(ret);
+                    return ret;
+                }
+
+                function getCoords(e, that) {
+                    if (isTouchEvent(e)) {
+                        return { x: (e.targetTouches[0].pageX - r.offsetLeft), y: (e.targetTouches[0].pageY - r.offsetTop) };
+                        //return e.targetTouches[0].clientX + ',' + e.targetTouches[0].clientY;
+                    }
+                    //console.log(e.clientX + ',' + e.pageX + ',' + r.offsetLeft);
+                    //console.log(e.clientY + ',' + e.pageY + ',' + that.offsetTop);
+                    return { x: (e.pageX - r.offsetLeft), y: (e.pageY - r.offsetTop) };
+                    //return (e.pageX - r.offsetLeft) + ',' + (e.pageY - r.offsetTop);
+                    //return e.clientX + ',' + e.clientY;
+                }
+
+                function down(e) {
+                    var point = getCoords(e);
+                    points = [point];
+                    strokes = {};
+                    glyph = null;
+					lastTouchedTarget = -1;
+                    drawnPath = 'M' + point.x + ',' + point.y + ' ';
+                    p.setAttribute('stroke', obj2col(drawcolor));
+                    p.setAttribute('d', points2path(0, points.length));
+                    isDown = true;
+
+                    if (isTouchEvent(e)) e.preventDefault();
+                }
+
+                function move(e) {
+                    if (isDown) {
+                        var point = getCoords(e);
+						
+						// Is it on a new target?
+						if(vibrateOn && Navigator && Navigator.vibrate){
+							for (var t in targets) {
+								if (Math.pow(targets[t].x - points[i].x,2) + Math.pow(targets[t].y - points[i].y,2) <= cutoff) {
+									if(t != lastTouchedTarget)
+										Navigastor.vibrate(100);
+								}
+							}
+						}
+						
+                        points.push(point);
+                        drawnPath += 'L' + point.x + ',' + point.y + ' ';
+                        //drawnPath += 'L' + getCoords(e, this) + ' ';
+                        //p.setAttribute('d', points2path(0, points.length));
+                        //console.log(drawnPath);
+                        p.setAttribute('d', drawnPath);
+                    }
+
+                    if (isTouchEvent(e))
+                        e.preventDefault();
+                }
+
+                function up(e) {
+                    if (!isDown) return;
+                    isDown = false;
+                    if (isTouchEvent(e))
+                        e.preventDefault();
+
+                    console.log("points.length = " + points.length);
+                    var lastt = -1;
+                    starti = 0;
+                    for (var i = 0; i < points.length; i++) {
+                        // Find closest target for each point
+                        //console.log('i = ' + i);
+                        var best = 999999, bestindex = -1;
+                        for (var t in targets) {
+                            var dx = targets[t].x - points[i].x;
+                            var dy = targets[t].y - points[i].y;
+                            var dist2 = dx * dx + dy * dy;
+                            
+                            if (dist2 < best && dist2 <= cutoff) {
+                                best = dist2;
+                                bestindex = t;
+                            }
+                        }
+                        if (bestindex != -1) {
+                            // calculate vector to animate point along
+                            points[i].vx = targets[bestindex].x - points[i].x;
+                            points[i].vy = targets[bestindex].y - points[i].y;
+                            // For now just set it, later animate
+                            //points[i].x = targets[bestindex].x;
+                            //points[i].y = targets[bestindex].y;
+                            points[i].tx = targets[bestindex].x;
+                            points[i].ty = targets[bestindex].y;
+                            points[i].last = bestindex;
+                            points[i].closeby = bestindex;
+                            if (lastt != -1 && lastt != bestindex) {
+                                // Stroke between targets detected
+                                strokes['f' + Math.min(lastt, bestindex) + 't' + Math.max(lastt, bestindex)] = 1;
+                            }
+                            lastt = bestindex;
+                        }else if (lastt != -1) {
+                            points[i].last = lastt;
+                        } else {
+                            starti = i + 1;
+                        }
+                    }
+                    
+                    // Now do it backwards to find next valid point
+                    stopi = points.length;
+                    lastt = -1;
+                    for (i = points.length - 1; i >= starti; i--) {
+                        //console.log('backtrack ' + i + ' of ' + points.length);
+                        if (points[i].closeby !== undefined) {
+                            lastt = points[i].closeby;
+                            points[i].next = lastt;
+                        } else if (lastt != -1) {
+                            points[i].next = lastt;
+                        } else {
+                            stopi = i;
+                        }
+                    }
+                    
+                    // Finally go through all (valid) points a last time to see where to interpolate them
+                    for (i = starti; i < stopi; i++) {
+                        //console.log('p' + i + ':{close:' + points[i].closeby + ', next:' + points[i].next + ', last:' + points[i].last)
+                        if (points[i].closeby == undefined) {
+                            var target;
+                            if (points[i].last == points[i].next) {
+                                // This is on a loop back to the same point
+                                target = targets[points[i].last];
+                            } else {
+                                target = _pointOnLine(targets[points[i].last], targets[points[i].next], points[i]);
+                                if (target === null) {
+                                    //console.log(pp(targets[points[i].last]) + ', ' + pp(targets[points[i].next]) + ', ' + pp(points[i]));
+                                    continue;
+                                }
+                            }
+                            //console.log('target found: ' + pp(target));
+                            
+                            points[i].vx = target.x - points[i].x;
+                            points[i].vy = target.y - points[i].y;
+                            // For now set, later animate
+                            //points[i].x = target.x;
+                            //points[i].y = target.y;
+                            points[i].tx = target.x;
+                            points[i].ty = target.y;
+                        }
+                    }
+                    
+                    // Store start position for each point
+                    for (i = starti; i < stopi; i++) {
+                        points[i].ox = points[i].x;
+                        points[i].oy = points[i].y;
+                    }
+
+                    // Glyph detection
+                    var ss = '';
+                    for (var s in strokes) ss += s + ',';
+                    console.log('strokes: ' + ss);
+
+                    glyph = null;
+                    for (var g in glyphs) {
+                        var found = true;
+                        for (var st in glyphs[g].strokes) {
+                            //console.log('checking strokes for ' + st);
+                            if (strokes[st] != 1) {
+                                //console.log('NOPE!');
+                                found = false;
+                                break;
+                            }
+                        }
+                        if (found) {
+                            for (st in strokes) {
+                                //console.log('checking glyph for ' + st);
+                                if (!glyphs[g].strokes[st]) {
+                                    //console.log('NOPE!');
+                                    found = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (found) {
+                            glyph = glyphs[g];
+                            break;
+                        }
+                    }
+
+                    if (glyph != null) {
+                        console.log('found ' + glyph.name[0]);
+                        var nameIndex = glyphsShown++ % glyph.name.length;
+                        txt.textContent = glyph.name[nameIndex].toUpperCase();
+                    } else {
+                        txt.textContent = 'UNKNOWN';
+                    }
+
+                    //window.requestAnimationFrame(looper);
+                    startLoop();
+                    
+                    //console.log('starti ' + starti + ', stopi = ' + stopi);
+                    //var path = points2path(starti, stopi, true);
+                    //console.log(path);
+                    //p.setAttribute('d', path);
+                }
+                
+                function pp(p) {
+                    return '{x:' + p.x + ', y:' + p.y + '}';
+                }
+                
+                function showNextGlyph() {
+                    //var index = Math.floor((Math.random() * glyphs.length));
+                    var index = glyphsShown % glyphs.length;
+                    glyph = glyphs[index];
+                    console.log('random glyph ' + index + ': ' + glyph);
+                    txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
+                    points = [];
+                    for (var i = 0; i < glyph.points.length; i++) {
+                        points.push(targets[glyph.points[i]]);
+                    }
+                    p.setAttribute('d', points2path(0, points.length));
+                    p.setAttribute('stroke', obj2col(okcolor));
+                }
+				
+				function textClick(){
+					if(glyph != null && glyph.name.length > 1){
+						txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
+					}
+				}
+
+                r.addEventListener('mousedown', down, false);
+                r.addEventListener('mousemove', move, false);
+                r.addEventListener('mouseup', up, false);
+                r.addEventListener('touchstart', down, false);
+                r.addEventListener('touchmove', move, false);
+                r.addEventListener('touchend', up, false);
+                r.addEventListener('mouseout', up, false);
+
+                
+                
+                var cc = 0, starttime = 0, lasttime = 0;
+                var started = new Date().getTime();
+                function startLoop() {
+                    cc = 0;
+                    starttime = lasttime = +new Date;
+                    started = new Date().getTime();
+                    window.requestAnimationFrame(looper, true);
+                }
+
+                var looptimeMs = 500.0;
+                function looper() {
+                    var current = new Date().getTime(),
+                        delta = current - started,
+                        deltac = current - lasttime;
+                    //console.log("frame " + cc + ", date = " + data + ', st = ' + starttime);
+                    var dd = deltac / looptimeMs;
+                    var dc = delta / looptimeMs;
+                    if (dc > 1) dc = 1;
+                    
+                    //console.log('delta: ' + delta + ', d2: ' + deltac + ', dd: '+dd + ', dc: '+dc);
+
+                    if (delta >= looptimeMs) {
+                        for (var j = starti; j < stopi; j++) {
+                            points[j].x = points[j].tx;
+                            points[j].y = points[j].ty;
+                        }
+                        console.log('done looping for now');
+                    } else {
+                        for (var i = starti; i < stopi; i++) {
+                            //points[i].x += points[i].vx * deltac;
+                            //points[i].y += points[i].vy * deltac;
+                            points[i].x += points[i].vx * dd;
+                            points[i].y += points[i].vy * dd;
+                        }
+                        window.requestAnimationFrame(looper);
+                    }
+                    
+                    var path = points2path(starti, stopi);
+                    var tocolor = glyph == null ? badcolor : okcolor;
+                    p.setAttribute('stroke', interpolateColor(drawcolor, tocolor, dc));
+                    p.setAttribute('d', path);
+                    
+                    lasttime = current;
+                }
+            </script>
+    </body>
+</html>
