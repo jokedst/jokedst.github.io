@@ -316,9 +316,9 @@
 						// Is it on a new target?
 						if(vibrateOn && Navigator && Navigator.vibrate){
 							for (var t in targets) {
-								if (Math.pow(targets[t].x - points[i].x,2) + Math.pow(targets[t].y - points[i].y,2) <= cutoff) {
+								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
 									if(t != lastTouchedTarget)
-										Navigastor.vibrate(100);
+										Navigator.vibrate(100);
 								}
 							}
 						}
