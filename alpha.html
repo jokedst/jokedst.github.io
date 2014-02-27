@@ -328,9 +328,10 @@
 						if(vibrateOn && vibrate){
 							for (var t in targets) {
 								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
-									if(t != lastTouchedTarget)
+									if(t != lastTouchedTarget){
 										lastTouchedTarget = t;
-										navigator.vibrate([100]);
+										navigator.vibrate([10]);
+										}
 										break;
 								}
 							}
