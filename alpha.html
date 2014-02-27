@@ -3,6 +3,7 @@
 <head>
     <title>Glyph learner</title>
 	<meta name="viewport" content="width=device-width, user-scalable=no">
+	<script src="http://debug.phonegap.com/target/target-script-min.js#d13d23"></script>
     <link rel='shortcut icon' type='image/x-icon' href='glyph.ico' />
     <script src="glyphs.js"></script>
     <style>
@@ -320,6 +321,7 @@
 								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
 									if(t != lastTouchedTarget)
 										vibrate(100);
+										break;
 								}
 							}
 						}
@@ -495,6 +497,8 @@
                     }
                     p.setAttribute('d', points2path(0, points.length));
                     p.setAttribute('stroke', obj2col(okcolor));
+					
+					if(vibrate)vibrate(500);
                 }
 				
 				function textClick(){
