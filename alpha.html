@@ -44,12 +44,12 @@
             border: solid 3px #00f3ff;
             background-color: #19454a;
             color: #8cffff;
-            padding: 1px;
-            font-size: 1pt;
+            padding: 10px;
+            font-size: 10pt;
             font-family: sans-serif;
             font-weight: bold;
-            width: 100%;
-            margin: 3px;
+            width: inherit;
+            margin-top: 3px;
         }
 
     </style>
@@ -61,12 +61,12 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" aviewBox="0 0 500 500" id="glyphsvg">
             <path id="p" stroke="#aef" stroke-width="2" fill="none" pointer-events="none"/>
         </svg>
-		<div>
-        <div class="btn" onclick="showNextGlyph()" id="nextBtn">NEXT</div>
-        <div class="btn" onclick="showThisGlyph()" id="showButton">SHOW</div>
-        <div class="btn" onclick="showLessons()" id="lessonsButton" style="float: left">LESSONS</div>
+		<div style='overflow:auto'>
+			<div class="btn" onclick="showNextGlyph()" id="nextBtn">NEXT</div>
+			<div class="btn" onclick="showThisGlyph()" id="showButton">SHOW</div>
+			<div class="btn" onclick="showLessons()" id="lessonsButton" style="float: left;margin-left:0px">LESSONS</div>
 		</div>
-        <div id='LessonsDiv'>
+        <div id='LessonsDiv' st>
             <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
             <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
             <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
