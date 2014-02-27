@@ -330,7 +330,7 @@
 								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
 									if(t != lastTouchedTarget){
 										lastTouchedTarget = t;
-										navigator.vibrate([10]);
+										navigator.vibrate([30]);
 										}
 										break;
 								}
@@ -502,7 +502,7 @@
                     p.setAttribute('d', points2path(0, points.length));
                     p.setAttribute('stroke', obj2col(okcolor));
 					
-					navigator.vibrate([500]);
+					navigator.vibrate([50]);
                 }
 				
 				function textClick(){
