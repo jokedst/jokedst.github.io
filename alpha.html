@@ -140,6 +140,12 @@
                 };
 
                 window.onload = function () {
+					// DEBUG: Check if vibrate exists
+					var vibn = navigator.vibrate ? true : false;
+					var mozvib = navigator.mozVibrate ? true : false;
+					var wkvib = navigator.webkitVibrate ? true : false;
+					alert('native vibrate: '+vibn+'\nmozvib: '+mozvib+'\nwebkit: '+wkvib+'\nvib: '+(vibrate?true:false));
+				
                     // This is a bunch of 'adapt to resolution' crap. Works sometimes :)
                     var w = document.getElementById('adiv').offsetWidth;
                     var h = Math.round(w * 518 / 500);
