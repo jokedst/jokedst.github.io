@@ -1,10 +1,17 @@
 ﻿<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>Glyph draw test</title>
+    <title>Glyph learner</title>
 	<meta name="viewport" content="width=device-width, user-scalable=no">
     <link rel='shortcut icon' type='image/x-icon' href='glyph.ico' />
     <script src="glyphs.js"></script>
+	<!-- 
+	Create new list of glyphs:
+	JSON.stringify(glyphs.sort(function(a,b){return a.family.localeCompare(b.family);}),function(key,value){if(key=='strokes')return undefined; else return value;})
+	
+	Sort glyphs by family, then name[0]:	
+glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.name[0].localeCompare(b.name[0]);return c;})	
+	-->
     <style>
         body {
             background-color: #000;
@@ -37,6 +44,24 @@
             font-size: 40pt;
             font-family: sans-serif;
             font-weight: bold;
+            margin-left: 5px;
+        }
+        .lbtn {
+            border: solid 3px #00f3ff;
+            background-color: #19454a;
+            color: #8cffff;
+            padding: 10px;
+            font-size: 10pt;
+            font-family: sans-serif;
+            font-weight: bold;
+            width: inherit;
+            margin-top: 3px;
+        }
+
+        #spacer {
+            color: #6be7c5;
+            text-align: center;
+            font-family: sans-serif;
         }
 
     </style>
@@ -48,7 +73,14 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" aviewBox="0 0 500 500" id="glyphsvg">
             <path id="p" stroke="#aef" stroke-width="2" fill="none" pointer-events="none"/>
         </svg>
-        <div class="btn" onclick="showNextGlyph()" id="nextBtn">NEXT</div>
+		<div style='overflow:auto' id="mainButtons">
+			<div class="btn" onclick="showNextGlyph()" id="nextBtn">NEXT</div>
+			<div class="btn" onclick="showCurrentGlyph()" id="showButton">SHOW</div>
+			<div class="btn" onclick="showLessons()" id="lessonsButton" style="float: left;margin-left:0px">LESSONS</div>
+		</div>
+        <div id='LessonsDiv' style='display:none'>
+            <div class="lbtn" onclick="startLesson(-1)">No lesson - free play!</div>
+        </div>
             <script>
                 var r = document.getElementById('glyphsvg'),
                     p = document.getElementById('p'),
@@ -74,6 +106,20 @@
                 var strokes = {};
                 var glyph = null,
                     glyphsShown = 0;
+				var lastTouchedTarget = -1,
+					vibrateOn = true;
+				var vibrate = navigator.vibrate || navigator.mozVibrate || navigator.webkitVibrate || null;
+				var currentLesson = -1, lesson = {};
+				var results = null, settings = {};
+
+				Storage.prototype.setObject = function(key, value) {
+				    this.setItem(key, JSON.stringify(value));
+				};
+
+				Storage.prototype.getObject = function(key) {
+				    var value = this.getItem(key);
+				    return value && JSON.parse(value);
+				};
                 
                 function interpolateColor(from, to, delta) {
                     var red = Math.round((from.r * (1.0 - delta)) + (to.r * delta));
@@ -96,11 +142,6 @@
                     }
                     return rules;
                 };
-                function css_getclassOld(name) {
-                    var rules = cssrules();
-                    if (!rules.hasOwnProperty(name)) throw 'todo:deal_with_notfound_case';
-                    return rules[name];
-                };
                 
                 function css_getclass(name) {
                     var ds = document.styleSheets;
@@ -114,16 +155,28 @@
                     return null;
                 };
 
-                window.onload = function () {
+                function randomizeArray(myArray) {
+                    var i = myArray.length;
+                    if (i == 0) return;
+                    while (--i) {
+                        var j = Math.floor(Math.random() * (i + 1));
+                        var tempi = myArray[i];
+                        var tempj = myArray[j];
+                        myArray[i] = tempj;
+                        myArray[j] = tempi;
+                    }
+                };
+
+                window.onload = function () {				
                     // This is a bunch of 'adapt to resolution' crap. Works sometimes :)
                     var w = document.getElementById('adiv').offsetWidth;
                     var h = Math.round(w * 518 / 500);
                     var winh = window.innerHeight;
                     
+                    // Detect landscape view
                     if (winh < h * 1.2) {
-                        // Landscape-ish
                         w = Math.round(winh *0.8 * 500 / 518);
-                        var h = Math.round(w * 518 / 500);
+                        h = Math.round(w * 518 / 500);
                     }
 
                     console.log(w);
@@ -143,15 +196,6 @@
                     txt.style.fontSize = Math.round(w / 10) + 'px';
                     var txth = txt.offsetHeight;
                     
-                    for (var g in glyphs) {
-                        glyphs[g].strokes = {};
-                        var lastt = glyphs[g].points[0];
-                        for (var i = 1; i < glyphs[g].points.length; i++) {
-                            var next = glyphs[g].points[i];
-                            glyphs[g].strokes['f' + Math.min(lastt, next) + 't' + Math.max(lastt, next)] = 1;
-                            lastt = next;
-                        }
-                    }
 
                     var z = w * 0.128;
                     var btnstyle = css_getclass('.btn').style;
@@ -162,18 +206,78 @@
                     console.log('winh: ' + winh + ', btnh: ' + btnh + ', ' + ', txth: ' + txth);
                     console.log('toth: ' + (btnh + txth + h));
                     console.log('left: ' + (winh - (btnh + txth + h)));
-
-
-                    //document.getElementById('spacer').style.height = '285px';
                     
                     document.getElementById('spacer').style.height = (winh - (btnh + txth + h) - 30) + 'px';
-                    
 
-                    // Test: sort glyphs by number of points
-                    //glyphs.sort(function (a, b) { return a.points.length - b.points.length });
-                    //for (var g in glyphs)
-                    //    console.log(glyphs[g].name[0] + ' : ' + glyphs[g].points.length);
+                    // Build up the lessons buttons
+                    var lessonsDiv = document.getElementById('LessonsDiv');
+                    for (var l in lessons) {
+                        //var lessonNumber = l;
+                        var btn = document.createElement("div");
+                        btn.appendChild(document.createTextNode(lessons[l].name));
+                        btn.className = 'lbtn';
+                        //btn.onclick = function () { var lessonNumber = l; startLesson(lessonNumber); };
+                        btn.setAttribute('onClick', 'startLesson(' + l + ')');
+
+                        lessonsDiv.appendChild(btn);
+                        lessons[l].glyphs = [];
+                    }
+                    
+                    // Figure out shich strokes make up each glyph (e.g. 'f1t4' = from 1 to 4)
+                    for (var g in glyphs) {
+                        glyphs[g].strokes = {};
+                        var lastt = glyphs[g].points[0];
+                        for (var i = 1; i < glyphs[g].points.length; i++) {
+                            var next = glyphs[g].points[i];
+                            // To avoid dupes always take lowest number fist
+                            glyphs[g].strokes['f' + Math.min(lastt, next) + 't' + Math.max(lastt, next)] = 1;
+                            lastt = next;
+                        }
+                        
+                        // Add glyph to correct lesson
+                        for (l = 0; l < lessons.length; l++) {
+                            if (lessons[l].family == glyphs[g].family) {
+                                lessons[l].glyphs.push(glyphs[g]);
+                                break;
+                            }
+                        }
+                    }
+
+                    // Load old results (if any)
+                    results = window.localStorage.getObject('results');
+                    settings = window.localStorage.getObject('settings') || {};  // An empty object means default settings
                 };
+
+                function showLessons() {
+                    txt.textContent = 'LESSONS';
+                    document.getElementById('mainButtons').style.display = 'none';
+                    document.getElementById('glyphsvg').style.display = 'none';
+                    document.getElementById('spacer').style.display = 'none';
+                    document.getElementById('LessonsDiv').style.display = '';
+
+                }
+
+                function startLesson(l) {
+                    console.log('Starting lesson ' + l);
+                    currentLesson = l;
+                    
+                    document.getElementById('mainButtons').style.display = '';
+                    document.getElementById('glyphsvg').style.display = '';
+                    document.getElementById('spacer').style.display = '';
+                    document.getElementById('LessonsDiv').style.display = 'none';
+                    
+                    if (l == -1) {
+                        // Free play!
+                        document.getElementById('spacer').textContent = '';
+                        txt.textContent = 'UNKNOWN';
+                        return;
+                    }
+
+                    lesson = { glyphsleft: lessons[l].glyphs.slice(0), peeked: false };
+
+                    document.getElementById('spacer').textContent = lessons[l].name.toUpperCase();
+                    showNextGlyph();
+                }
 
                 function isTouchEvent(e) {
                     return e.type.match(/^touch/);
@@ -284,6 +388,7 @@
                     points = [point];
                     strokes = {};
                     glyph = null;
+					lastTouchedTarget = -1;
                     drawnPath = 'M' + point.x + ',' + point.y + ' ';
                     p.setAttribute('stroke', obj2col(drawcolor));
                     p.setAttribute('d', points2path(0, points.length));
@@ -295,12 +400,26 @@
                 function move(e) {
                     if (isDown) {
                         var point = getCoords(e);
+						
                         points.push(point);
                         drawnPath += 'L' + point.x + ',' + point.y + ' ';
                         //drawnPath += 'L' + getCoords(e, this) + ' ';
                         //p.setAttribute('d', points2path(0, points.length));
                         //console.log(drawnPath);
                         p.setAttribute('d', drawnPath);
+						
+						// Is it on a new target? If so, vibrate.
+						if(vibrateOn && vibrate){
+							for (var t in targets) {
+								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
+									if(t != lastTouchedTarget){
+										lastTouchedTarget = t;
+										navigator.vibrate([30]);
+										}
+										break;
+								}
+							}
+						}
                     }
 
                     if (isTouchEvent(e))
@@ -406,6 +525,7 @@
                     for (var s in strokes) ss += s + ',';
                     console.log('strokes: ' + ss);
 
+                    var lastGlyph = glyph;
                     glyph = null;
                     for (var g in glyphs) {
                         var found = true;
@@ -435,8 +555,13 @@
 
                     if (glyph != null) {
                         console.log('found ' + glyph.name[0]);
-                        var nameIndex = glyphsShown++ % glyph.name.length;
-                        txt.textContent = glyph.name[nameIndex].toUpperCase();
+                        if (currentLesson != -1 && glyph.name[0] == lesson.glyphsleft[lesson.currentIndex].name[0]) {
+                            console.log('drew correctly!');
+                            lesson.drewCorrect = true;
+                        } else {
+                            var nameIndex = glyphsShown++ % glyph.name.length;
+                            txt.textContent = glyph.name[nameIndex].toUpperCase();
+                        }
                     } else {
                         txt.textContent = 'UNKNOWN';
                     }
@@ -455,11 +580,58 @@
                 }
                 
                 function showNextGlyph() {
-                    //var index = Math.floor((Math.random() * glyphs.length));
-                    var index = glyphsShown % glyphs.length;
-                    glyph = glyphs[index];
-                    console.log('random glyph ' + index + ': ' + glyph);
-                    txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
+                    if (currentLesson == -1) {
+                        var index = glyphsShown % glyphs.length;
+                        glyph = glyphs[index];
+                        console.log('random glyph ' + index + ': ' + glyph);
+                        txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
+                    } else {
+                        if (lesson.currentIndex != undefined && !lesson.peeked && lesson.drewCorrect) {
+                            // Mark this glyph as done
+                            lesson.glyphsleft.splice(lesson.currentIndex, 1);
+                        }
+                        if (lesson.glyphsleft.length == 0) {
+                            txt.textContent = "LESSON DONE!";
+                            glyph = null;
+                        } else {
+                            
+                            // Only switch glyph if there is more than one left. 
+                            var left = lesson.glyphsleft.length;
+                            if (left != 1) {
+                                // Never repeat the same glyph
+                                var tempi = Math.floor((Math.random() * (lesson.glyphsleft.length-1)));
+                                if (tempi >= lesson.currentIndex) tempi++;
+                                lesson.currentIndex = tempi;
+                            }
+                            
+                            // TODO: if drew unknown, won't replace name when drawing corect later?
+                            
+                            glyph = lesson.glyphsleft[lesson.currentIndex];
+                            var nameindex = Math.floor(Math.random() * glyph.name.length);
+                            txt.textContent = glyph.name[nameindex].toUpperCase();
+                            lesson.peeked = false;
+                            lesson.drewCorrect = false;
+                        }
+                    }
+
+                    if (settings.showOnNext) {
+                        points = [];
+                        for (var i = 0; i < glyph.points.length; i++) {
+                            points.push(targets[glyph.points[i]]);
+                        }
+                        p.setAttribute('d', points2path(0, points.length));
+                    } else {
+                        points = [];
+                        p.setAttribute('d', '');
+                    }
+                    p.setAttribute('stroke', obj2col(okcolor));
+                }
+                
+                function showCurrentGlyph() {
+                    if (!glyph) return;
+                    lesson.peeked = true;
+                    
+                    //txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
                     points = [];
                     for (var i = 0; i < glyph.points.length; i++) {
                         points.push(targets[glyph.points[i]]);
@@ -481,8 +653,6 @@
                 r.addEventListener('touchmove', move, false);
                 r.addEventListener('touchend', up, false);
                 r.addEventListener('mouseout', up, false);
-
-                
                 
                 var cc = 0, starttime = 0, lasttime = 0;
                 var started = new Date().getTime();
