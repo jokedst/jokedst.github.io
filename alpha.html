@@ -1,11 +1,18 @@
 ﻿<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" manifest="glyph.appcache">
 <head>
     <title>Glyph learner</title>
 	<meta name="viewport" content="width=device-width, user-scalable=no">
 	<script src="http://debug.phonegap.com/target/target-script-min.js#d13d23"></script>
     <link rel='shortcut icon' type='image/x-icon' href='glyph.ico' />
     <script src="glyphs.js"></script>
+	<!-- 
+	Create new list of glyphs:
+	JSON.stringify(glyphs.sort(function(a,b){return a.family.localeCompare(b.family);}),function(key,value){if(key=='strokes')return undefined; else return value;})
+	
+	Sort glyphs by family, then name[0]:	
+glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.name[0].localeCompare(b.name[0]);return c;})	
+	-->
     <style>
         body {
             background-color: #000;
@@ -66,13 +73,7 @@
 			<div class="btn" onclick="showThisGlyph()" id="showButton">SHOW</div>
 			<div class="btn" onclick="showLessons()" id="lessonsButton" style="float: left;margin-left:0px">LESSONS</div>
 		</div>
-        <div id='LessonsDiv' st>
-            <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
-            <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
-            <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
-            <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
-            <div class="lbtn" onclick="startLesson(1)" >1 Meh</div>
-        </div>
+        <div id='LessonsDiv'></div>
             <script>
                 var r = document.getElementById('glyphsvg'),
                     p = document.getElementById('p'),
@@ -101,6 +102,17 @@
 				var lastTouchedTarget = -1,
 					vibrateOn = true;
 				var vibrate = navigator.vibrate || navigator.mozVibrate || navigator.webkitVibrate || null;
+				var currentLesson = -1;
+				var results = null;
+
+				Storage.prototype.setObject = function (key, value) {
+				    this.setItem(key, JSON.stringify(value));
+				}
+
+				Storage.prototype.getObject = function (key) {
+				    var value = this.getItem(key);
+				    return value && JSON.parse(value);
+				}
                 
                 function interpolateColor(from, to, delta) {
                     var red = Math.round((from.r * (1.0 - delta)) + (to.r * delta));
@@ -122,11 +134,6 @@
                         for (var j = 0; j < dsil; ++j) rules[dsi[j].selectorText] = dsi[j];
                     }
                     return rules;
-                };
-                function css_getclassOld(name) {
-                    var rules = cssrules();
-                    if (!rules.hasOwnProperty(name)) throw 'todo:deal_with_notfound_case';
-                    return rules[name];
                 };
                 
                 function css_getclass(name) {
@@ -193,7 +200,28 @@
                     console.log('left: ' + (winh - (btnh + txth + h)));
                     
                     document.getElementById('spacer').style.height = (winh - (btnh + txth + h) - 30) + 'px';
+
+                    // Build up the lessons buttons
+                    var lessonsDiv = document.getElementById('LessonsDiv');
+                    for (var l in lessons) {
+                        //var lessonNumber = l;
+                        var btn = document.createElement("div");
+                        btn.appendChild(document.createTextNode(lessons[l].name));
+                        btn.className = 'lbtn';
+                        //btn.onclick = function () { var lessonNumber = l; startLesson(lessonNumber); };
+                        btn.setAttribute('onClick', 'startLesson(' + l + ')');
+
+                        lessonsDiv.appendChild(btn);
+                    }
+
+                    // Load old results (if any)
+                    results = window.localStorage.getObject('results');
                 };
+
+                function startLesson(l) {
+                    console.log('Starting lesson ' + l);
+                    currentLesson = l;
+                }
 
                 function isTouchEvent(e) {
                     return e.type.match(/^touch/);
