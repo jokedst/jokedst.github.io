@@ -67,12 +67,12 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
         <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" aviewBox="0 0 500 500" id="glyphsvg">
             <path id="p" stroke="#aef" stroke-width="2" fill="none" pointer-events="none"/>
         </svg>
-		<div style='overflow:auto'>
+		<div style='overflow:auto' id="mainButtons">
 			<div class="btn" onclick="showNextGlyph()" id="nextBtn">NEXT</div>
 			<div class="btn" onclick="showThisGlyph()" id="showButton">SHOW</div>
 			<div class="btn" onclick="showLessons()" id="lessonsButton" style="float: left;margin-left:0px">LESSONS</div>
 		</div>
-        <div id='LessonsDiv'></div>
+        <div id='LessonsDiv' style='display:none'></div>
             <script>
                 var r = document.getElementById('glyphsvg'),
                     p = document.getElementById('p'),
@@ -104,14 +104,14 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 				var currentLesson = -1;
 				var results = null;
 
-				Storage.prototype.setObject = function (key, value) {
+				Storage.prototype.setObject = function(key, value) {
 				    this.setItem(key, JSON.stringify(value));
-				}
+				};
 
-				Storage.prototype.getObject = function (key) {
+				Storage.prototype.getObject = function(key) {
 				    var value = this.getItem(key);
 				    return value && JSON.parse(value);
-				}
+				};
                 
                 function interpolateColor(from, to, delta) {
                     var red = Math.round((from.r * (1.0 - delta)) + (to.r * delta));
@@ -217,9 +217,25 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     results = window.localStorage.getObject('results');
                 };
 
+                function showLessons() {
+                    txt.textContent = 'LESSONS';
+                    document.getElementById('mainButtons').style.display = 'none';
+                    document.getElementById('glyphsvg').style.display = 'none';
+                    document.getElementById('spacer').style.display = 'none';
+                    document.getElementById('LessonsDiv').style.display = '';
+
+                }
+
                 function startLesson(l) {
                     console.log('Starting lesson ' + l);
                     currentLesson = l;
+                    
+                    document.getElementById('mainButtons').style.display = '';
+                    document.getElementById('glyphsvg').style.display = '';
+                    document.getElementById('spacer').style.display = '';
+                    document.getElementById('LessonsDiv').style.display = 'none';
+                    
+                    txt.textContent = '?';
                 }
 
                 function isTouchEvent(e) {
