@@ -1,10 +1,10 @@
 CACHE MANIFEST
 
-CACHE:
-glypher.html
-glyphs.js
-background.png
-alpha.html
+# CACHE:
+# glypher.html
+# glyphs.js
+# background.png
+# alpha.html
 
-NETWORK:
-*
+# NETWORK:
+# *
