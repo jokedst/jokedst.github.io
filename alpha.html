@@ -634,7 +634,6 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                                 lesson.currentIndex = tempi;
                             } else lesson.currentIndex = 0;
                             
-                            // TODO: if drew unknown, won't replace name when drawing corect later?
                             glyph = lesson.glyphsleft[lesson.currentIndex];
                             lesson.nameindex = Math.floor(Math.random() * glyph.name.length);
                             txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
@@ -658,6 +657,11 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 }
                 
                 function showCurrentGlyph() {
+                    // TODO: when drawn wrong, show correct glyph
+                    if (currentLesson != -1) {
+                        glyph = lesson.glyphsleft[lesson.currentIndex];
+                        txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
+                    }
                     if (!glyph) return;
                     lesson.peeked = true;
                     
