@@ -23,12 +23,13 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
         }
 
         #adiv {
+            text-shadow: 0 0 6px #6be7bd;
             background-color: #000;
-            color: #6be7c5;
+            color: #6be7bd;
             font-size: 20pt;
             text-align: center;
             font-family: sans-serif;
-            font-weight: bold;
+            font-weight: 200;
         }
         path {
             stroke-linecap: round;
@@ -67,6 +68,10 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
     </style>
 </head>
     <body>
+        <div id="progress-container" style="width:80px; height:10px; border:1px solid #00e969; margin:3px; position: fixed; right: 0px; display: none">
+            <div id="progress-bar" style="width:70%; background-image:linear-gradient( 90deg, #00833b, #00ef73 ); height:inherit; float: left"></div>
+            <div id="anti-progress-bar" style="width:30%; background-image:linear-gradient( 90deg, #520000, #840000 ); height:inherit; float: left"></div>
+        </div>
         <div id="spacer"></div>
         <div style="background: #000" width="100%" id="adiv" onclick="textClick()">UNKNOWN</div>
         <!-- based on http://mcc.id.au/2010/signature.html -->
@@ -120,6 +125,17 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 				    var value = this.getItem(key);
 				    return value && JSON.parse(value);
 				};
+				
+				function setProgressBar(percent) {
+				    percent = Math.floor(percent);
+				    document.getElementById('anti-progress-bar').style.width = (100 - percent) + '%';
+				    document.getElementById('progress-bar').style.width = percent + '%';
+				    document.getElementById('progress-container').style.display = '';
+				}
+
+				function hideProgressBar() {
+				    document.getElementById('progress-container').style.display = 'none';
+				}
                 
                 function interpolateColor(from, to, delta) {
                     var red = Math.round((from.r * (1.0 - delta)) + (to.r * delta));
@@ -130,7 +146,6 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 
                 function obj2col(color) {
                     var s = 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
-                    console.log(s);
                     return s;
                 }
                 
@@ -254,7 +269,6 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     document.getElementById('glyphsvg').style.display = 'none';
                     document.getElementById('spacer').style.display = 'none';
                     document.getElementById('LessonsDiv').style.display = '';
-
                 }
 
                 function startLesson(l) {
@@ -270,12 +284,14 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         // Free play!
                         document.getElementById('spacer').textContent = '';
                         txt.textContent = 'UNKNOWN';
+                        hideProgressBar();
                         return;
                     }
 
-                    lesson = { glyphsleft: lessons[l].glyphs.slice(0), peeked: false };
+                    lesson = { glyphsleft: lessons[l].glyphs.slice(0), peeked: false, glyphCount: lessons[l].glyphs.length };
 
                     document.getElementById('spacer').textContent = lessons[l].name.toUpperCase();
+                    setProgressBar(0);
                     showNextGlyph();
                 }
 
@@ -354,7 +370,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 
                 function points2path(start, end, verbose) {
                     if (verbose) console.log('p2p s:' + start + " e:" + end);
-                    if (start >= end) return '';
+                    if (start >= end) return 'M0,0';
                     var ret = '', first = true;
                     var lastp = { x: -1, y: -1 };
                     for (var i = start; i < end; i++) {
@@ -368,7 +384,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         first = false;
                     }
                     if(verbose)console.log(ret);
-                    return ret;
+                    return ret.length > 0 ? ret : 'M0,0';
                 }
 
                 function getCoords(e, that) {
@@ -553,17 +569,29 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         }
                     }
 
+                    lesson.newCorrect = false;
                     if (glyph != null) {
                         console.log('found ' + glyph.name[0]);
                         if (currentLesson != -1 && glyph.name[0] == lesson.glyphsleft[lesson.currentIndex].name[0]) {
                             console.log('drew correctly!');
+                            txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
+                            if (!lesson.peeked) {
+                                console.log('progress: ' + (lesson.glyphCount - lesson.glyphsleft.length) * 100.0 / lesson.glyphCount);
+                                setProgressBar((lesson.glyphCount - lesson.glyphsleft.length + 1) * 100.0 / lesson.glyphCount);
+                            }
+                            if (!lesson.drewCorrect) {
+                                // They have now drawn the same again (after completing it)
+                                lesson.newCorrect = true;
+                            }
                             lesson.drewCorrect = true;
                         } else {
                             var nameIndex = glyphsShown++ % glyph.name.length;
                             txt.textContent = glyph.name[nameIndex].toUpperCase();
+                            lesson.drewIncorrectCount++;
                         }
                     } else {
                         txt.textContent = 'UNKNOWN';
+                        lesson.drewIncorrectCount++;
                     }
 
                     //window.requestAnimationFrame(looper);
@@ -589,6 +617,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         if (lesson.currentIndex != undefined && !lesson.peeked && lesson.drewCorrect) {
                             // Mark this glyph as done
                             lesson.glyphsleft.splice(lesson.currentIndex, 1);
+                            
+                            // Increase progress bar
                         }
                         if (lesson.glyphsleft.length == 0) {
                             txt.textContent = "LESSON DONE!";
@@ -602,15 +632,15 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                                 var tempi = Math.floor((Math.random() * (lesson.glyphsleft.length-1)));
                                 if (tempi >= lesson.currentIndex) tempi++;
                                 lesson.currentIndex = tempi;
-                            }
+                            } else lesson.currentIndex = 0;
                             
                             // TODO: if drew unknown, won't replace name when drawing corect later?
-                            
                             glyph = lesson.glyphsleft[lesson.currentIndex];
-                            var nameindex = Math.floor(Math.random() * glyph.name.length);
-                            txt.textContent = glyph.name[nameindex].toUpperCase();
+                            lesson.nameindex = Math.floor(Math.random() * glyph.name.length);
+                            txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
                             lesson.peeked = false;
                             lesson.drewCorrect = false;
+                            lesson.drewIncorrectCount = 0;
                         }
                     }
 
@@ -622,7 +652,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         p.setAttribute('d', points2path(0, points.length));
                     } else {
                         points = [];
-                        p.setAttribute('d', '');
+                        p.setAttribute('d', 'M0,0');
                     }
                     p.setAttribute('stroke', obj2col(okcolor));
                 }
@@ -680,6 +710,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             points[j].x = points[j].tx;
                             points[j].y = points[j].ty;
                         }
+                        txt.style.backgroundColor = '';
                         console.log('done looping for now');
                     } else {
                         for (var i = starti; i < stopi; i++) {
@@ -689,6 +720,16 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             points[i].y += points[i].vy * dd;
                         }
                         window.requestAnimationFrame(looper);
+                    
+                        if (currentLesson != -1) {
+                            var bounce = ((1 - (Math.cos(Math.PI * 2 * dc))) / 2);
+                                var bounceByte = Math.floor(bounce * 150);
+                            if (lesson.newCorrect) {
+                                txt.style.backgroundColor = obj2col({ r: 0, g: bounceByte, b: 0 });
+                            } else if (!lesson.drewCorrect) {
+                                txt.style.backgroundColor = obj2col({ r: bounceByte, g: 0, b: 0 });
+                            }
+                        }
                     }
                     
                     var path = points2path(starti, stopi);
