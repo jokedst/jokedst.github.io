@@ -63,11 +63,14 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 	        margin-top: 3px;
 	    }
 
-	    #spacer {
+	    .text {
 	        color: #6be7c5;
 	        text-align: center;
 	        font-family: sans-serif;
 	    }
+        .text a {
+            color: #00833b;
+        }
 
 	</style>
     <script> // google analytics
@@ -86,9 +89,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
             <div id="progress-bar" style="width:70%; background-image:linear-gradient( 90deg, #00833b, #00ef73 ); height:inherit; float: left"></div>
             <div id="anti-progress-bar" style="width:30%; background-image:linear-gradient( 90deg, #520000, #840000 ); height:inherit; float: left"></div>
         </div>
-        <div id="spacer"></div>
+        <div id="spacer" class="text"></div>
         <div style="background: #000" width="100%" id="adiv" onclick="textClick()">UNKNOWN</div>
-        <!-- based on http://mcc.id.au/2010/signature.html -->
         <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" id="glyphsvg">
             <path id="p" stroke="#aef" stroke-width="2" fill="none" pointer-events="none"/>
         </svg>
@@ -98,7 +100,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 			<div class="btn" onclick="showLessons()" id="lessonsButton" style="float: left;margin-left:0px">LESSONS</div>
 		</div>
         <div id='LessonsDiv' style='display:none'>
-            <div class="lbtn" onclick="startLesson(-1)">No lesson - free play!</div>
+            <div class="lbtn" onclick="startLesson(-1)" >No lesson - free play!</div>
+            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.01<br/>Feedback: <a href="mailto:jokedst@gmail.com">jokedst@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
         </div>
             <script>
                 var r = document.getElementById('glyphsvg'),
@@ -240,6 +243,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 
                     // Build up the lessons buttons
                     var lessonsDiv = document.getElementById('LessonsDiv');
+                    var aboutdiv = document.getElementById('aboutdiv');
                     for (var l in lessons) {
                         //var lessonNumber = l;
                         var btn = document.createElement("div");
@@ -248,7 +252,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         //btn.onclick = function () { var lessonNumber = l; startLesson(lessonNumber); };
                         btn.setAttribute('onClick', 'startLesson(' + l + ')');
 
-                        lessonsDiv.appendChild(btn);
+                        //lessonsDiv.appendChild(btn);
+                        lessonsDiv.insertBefore(btn, aboutdiv);
                         lessons[l].glyphs = [];
                     }
                     

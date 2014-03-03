@@ -12,70 +12,86 @@
 	Sort glyphs by family, then name[0]:	
 glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.name[0].localeCompare(b.name[0]);return c;})	
 	-->
-    <style>
-        body {
-            background-color: #000;
-        }
-        svg {
-            background: url("background.png");
-            background-size: contain;
-            position: relative;
+	<style>
+	    body {
+	        background-color: #000;
+	    }
+	    svg {
+	        background: url("background.png");
+	        background-size: contain;
+	        position: relative;
+	    }
+
+	    #adiv {
+	        text-shadow: 0 0 6px #6be7bd;
+	        background-color: #000;
+	        color: #6be7bd;
+	        font-size: 20pt;
+	        text-align: center;
+	        font-family: sans-serif;
+	        font-weight: 200;
+	    }
+	    path {
+	        stroke-linecap: round;
+	        stroke-linejoin: round;
+	    }
+
+	    .btn {
+	        border: solid 2px #00f3ff;
+	        background-color: #19454a;
+	        background: linear-gradient(to bottom, #08757b 0%,#1f464a 20%,#1f464a 80%,#08757b 100%);
+	        color: #8cffff;
+	        padding: 10px;
+	        float: right;
+	        font-size: 10pt;
+	        font-family: sans-serif;
+	        font-weight: bold;
+	        margin-left: 5px;
+	        text-shadow: 0px 0px 3px #08757b;
+	        /*-webkit-transform: scale(1,1.4);
+            font-weight: normal;*/
+	    }
+	    .lbtn {
+	        border: solid 3px #00f3ff;
+	        background-color: #19454a;
+	        color: #8cffff;
+	        padding: 10px;
+	        font-size: 10pt;
+	        font-family: sans-serif;
+	        font-weight: bold;
+	        width: inherit;
+	        margin-top: 3px;
+	    }
+
+	    .text {
+	        color: #6be7c5;
+	        text-align: center;
+	        font-family: sans-serif;
+	    }
+        .text a {
+            color: #00833b;
         }
 
-        #adiv {
-            text-shadow: 0 0 6px #6be7bd;
-            background-color: #000;
-            color: #6be7bd;
-            font-size: 20pt;
-            text-align: center;
-            font-family: sans-serif;
-            font-weight: 200;
-        }
-        path {
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .btn {
-            border: solid 3px #00f3ff;
-            background-color: #19454a;
-            color: #8cffff;
-            padding: 30px;
-            float: right;
-            font-size: 40pt;
-            font-family: sans-serif;
-            font-weight: bold;
-            margin-left: 5px;
-        }
-        .lbtn {
-            border: solid 3px #00f3ff;
-            background-color: #19454a;
-            color: #8cffff;
-            padding: 10px;
-            font-size: 10pt;
-            font-family: sans-serif;
-            font-weight: bold;
-            width: inherit;
-            margin-top: 3px;
-        }
-
-        #spacer {
-            color: #6be7c5;
-            text-align: center;
-            font-family: sans-serif;
-        }
-
-    </style>
+	</style>
+    <script> // google analytics
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date(); a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+        ga('create', 'UA-48558197-1', 'jokedst.github.io');
+        ga('send', 'pageview');
+    </script>
 </head>
     <body>
         <div id="progress-container" style="width:80px; height:10px; border:1px solid #00e969; margin:3px; position: fixed; right: 0px; display: none">
             <div id="progress-bar" style="width:70%; background-image:linear-gradient( 90deg, #00833b, #00ef73 ); height:inherit; float: left"></div>
             <div id="anti-progress-bar" style="width:30%; background-image:linear-gradient( 90deg, #520000, #840000 ); height:inherit; float: left"></div>
         </div>
-        <div id="spacer"></div>
+        <div id="spacer" class="text"></div>
         <div style="background: #000" width="100%" id="adiv" onclick="textClick()">UNKNOWN</div>
-        <!-- based on http://mcc.id.au/2010/signature.html -->
-        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" aviewBox="0 0 500 500" id="glyphsvg">
+        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" id="glyphsvg">
             <path id="p" stroke="#aef" stroke-width="2" fill="none" pointer-events="none"/>
         </svg>
 		<div style='overflow:auto' id="mainButtons">
@@ -84,7 +100,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 			<div class="btn" onclick="showLessons()" id="lessonsButton" style="float: left;margin-left:0px">LESSONS</div>
 		</div>
         <div id='LessonsDiv' style='display:none'>
-            <div class="lbtn" onclick="startLesson(-1)">No lesson - free play!</div>
+            <div class="lbtn" onclick="startLesson(-1)" >No lesson - free play!</div>
+            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.01<br/>Feedback: <a href="mailto:jokedst@gmail.com">jokedst@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
         </div>
             <script>
                 var r = document.getElementById('glyphsvg'),
@@ -226,6 +243,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 
                     // Build up the lessons buttons
                     var lessonsDiv = document.getElementById('LessonsDiv');
+                    var aboutdiv = document.getElementById('aboutdiv');
                     for (var l in lessons) {
                         //var lessonNumber = l;
                         var btn = document.createElement("div");
@@ -234,7 +252,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         //btn.onclick = function () { var lessonNumber = l; startLesson(lessonNumber); };
                         btn.setAttribute('onClick', 'startLesson(' + l + ')');
 
-                        lessonsDiv.appendChild(btn);
+                        //lessonsDiv.appendChild(btn);
+                        lessonsDiv.insertBefore(btn, aboutdiv);
                         lessons[l].glyphs = [];
                     }
                     
