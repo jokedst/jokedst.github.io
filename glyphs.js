@@ -56,6 +56,7 @@ var glyphs = [
     { name: ["Together"], points: [5, 3, 4, 5, 6, 8], family: "7_ssqw" },
     { name: ["Evolution"], points: [0, 5, 3, 6], family: "8_sq1" },
     { name: ["Failure"], points: [0, 5, 4, 7], family: "8_sq1" },
+    { name: ["Have"], points: [7, 5, 6, 10], family: "8_sq1" },
     { name: ["Potential"], points: [0, 5, 7, 9, 2], family: "8_sq1" },
     { name: ["Pursue"], points: [1, 3, 0, 4], family: "8_sq1" },
     { name: ["Question"], points: [0, 4, 3, 6], family: "8_sq1" },
