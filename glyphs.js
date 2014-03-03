@@ -111,17 +111,17 @@ var glyphs = [
     { name: ["Pursue", "Chase"], points: [0, 5, 3, 6, 8], family: "d_sq3" }
 ];
 var lessons = [
-    { name: '1 Centered and simple', family: '1_c1' },
-    { name: "2 More centered", family: '2_c2' },
-    { name: '3 Around the clock', family: '3_cl' },
-    { name: '4 Tiny Glyphs', family: '4_t' },
-    { name: '5 Around the edges', family: '5_o' },
-    { name: '6 Squiggly lines', family: '6_sq0' },
-    { name: '7 Short shapes', family: '7_ssqw' },
-    { name: '8 More squiggly lines', family: '8_sq1' },
-    { name: '9 Winged boxes', family: '9_h' },
-    { name: '10 Closed Shapes', family: 'a_s' },
-    { name: '11 Harder squigglies', family: 'b_sq2' },
-    { name: '12 Complex shapes', family: 'cx' },
-    { name: '13 Crazy squiggly lines', family: 'd_sq3' }
+    { name: '1 - Centered and simple', family: '1_c1' },
+    { name: "2 - More centered", family: '2_c2' },
+    { name: '3 - Around the clock', family: '3_cl' },
+    { name: '4 - Tiny Glyphs', family: '4_t' },
+    { name: '5 - Around the edges', family: '5_o' },
+    { name: '6 - Squiggly lines', family: '6_sq0' },
+    { name: '7 - Short shapes', family: '7_ssqw' },
+    { name: '8 - More squiggly lines', family: '8_sq1' },
+    { name: '9 - Winged boxes', family: '9_h' },
+    { name: '10 - Closed Shapes', family: 'a_s' },
+    { name: '11 - Harder squigglies', family: 'b_sq2' },
+    { name: '12 - Complex shapes', family: 'cx' },
+    { name: '13 - Crazy squiggly lines', family: 'd_sq3' }
 ];
