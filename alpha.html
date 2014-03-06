@@ -132,7 +132,9 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 					vibrateOn = true;
 				var vibrate = navigator.vibrate || navigator.mozVibrate || navigator.webkitVibrate || null;
 				var currentLesson = -1, lesson = {};
-				var results = null, settings = {};
+				var results = null,
+				    settings = {},
+				    glyphlookup = {};
 
 				Storage.prototype.setObject = function(key, value) {
 				    this.setItem(key, JSON.stringify(value));
@@ -189,7 +191,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 
                 function randomizeArray(myArray) {
                     var i = myArray.length;
-                    if (i == 0) return;
+                    if (i == 0) return [];
                     while (--i) {
                         var j = Math.floor(Math.random() * (i + 1));
                         var tempi = myArray[i];
@@ -197,6 +199,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         myArray[i] = tempj;
                         myArray[j] = tempi;
                     }
+                    return myArray;
                 };
 
                 window.onload = function () {				
@@ -267,6 +270,9 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             glyphs[g].strokes['f' + Math.min(lastt, next) + 't' + Math.max(lastt, next)] = 1;
                             lastt = next;
                         }
+                        // Set glyph id
+                        glyphs[g].id = strokes2id(glyphs[g].strokes);
+                        glyphlookup[glyphs[g].id] = glyphs[g];
                         
                         // Add glyph to correct lesson
                         for (l = 0; l < lessons.length; l++) {
@@ -323,7 +329,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         return;
                     }
 
-                    lesson = { glyphsleft: randomizeArray(lessons[l].glyphs.slice(0)), peeked: false, glyphCount: lessons[l].glyphs.length };
+                    lesson = { glyphsleft: randomizeArray(lessons[l].glyphs.slice(0)), peeked: false, glyphCount: lessons[l].glyphs.length, flawless: true };
 
                     document.getElementById('spacer').textContent = lessons[l].name.toUpperCase();
                     setProgressBar(0);
@@ -489,7 +495,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     for (var i = 0; i < points.length; i++) {
                         // Find closest target for each point
                         //console.log('i = ' + i);
-                        var best = 999999, bestindex = -1;
+                        var best = cutoff+1, bestindex = -1;
                         for (var t in targets) {
                             var dx = targets[t].x - points[i].x;
                             var dy = targets[t].y - points[i].y;
@@ -504,9 +510,6 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             // calculate vector to animate point along
                             points[i].vx = targets[bestindex].x - points[i].x;
                             points[i].vy = targets[bestindex].y - points[i].y;
-                            // For now just set it, later animate
-                            //points[i].x = targets[bestindex].x;
-                            //points[i].y = targets[bestindex].y;
                             points[i].tx = targets[bestindex].x;
                             points[i].ty = targets[bestindex].y;
                             points[i].last = bestindex;
@@ -572,37 +575,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     }
 
                     // Glyph detection
-                    var ss = '';
-                    for (var s in strokes) ss += s + ',';
-                    console.log('strokes: ' + ss);
-
-                    var lastGlyph = glyph;
-                    glyph = null;
-                    for (var g in glyphs) {
-                        var found = true;
-                        for (var st in glyphs[g].strokes) {
-                            //console.log('checking strokes for ' + st);
-                            if (strokes[st] != 1) {
-                                //console.log('NOPE!');
-                                found = false;
-                                break;
-                            }
-                        }
-                        if (found) {
-                            for (st in strokes) {
-                                //console.log('checking glyph for ' + st);
-                                if (!glyphs[g].strokes[st]) {
-                                    //console.log('NOPE!');
-                                    found = false;
-                                    break;
-                                }
-                            }
-                        }
-                        if (found) {
-                            glyph = glyphs[g];
-                            break;
-                        }
-                    }
+                    var id = strokes2id(strokes);
+                    glyph = glyphlookup[id] ? glyphlookup[id] : null;
 
                     lesson.newCorrect = false;
                     if (glyph != null) {
@@ -656,10 +630,15 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             // Increase progress bar
                         }
                         if (lesson.glyphsleft.length == 0) {
+                            if (txt.textContent == "LESSON DONE!") {
+                                // Start next lesson
+                                var nextLesson = (currentLesson + 1) % lessons.length;
+                                startLesson(nextLesson);
+                                return;
+                            }
                             txt.textContent = "LESSON DONE!";
                             glyph = null;
                         } else {
-                            
                             // Only switch glyph if there is more than one left. 
                             var left = lesson.glyphsleft.length;
                             if (left != 1) {
@@ -692,8 +671,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 }
                 
                 function showCurrentGlyph() {
-                    // TODO: when drawn wrong, show correct glyph
                     if (currentLesson != -1) {
+                        // When drawn wrong, show correct glyph
                         glyph = lesson.glyphsleft[lesson.currentIndex];
                         txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
                     }
@@ -779,18 +758,25 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     lasttime = current;
                 }
 
-                var glyphlookup = {}, idsSet = false;
+                var idsSet = false;
+                function strokes2id(strokes) {
+                    // A glyph id is just it's strokes - sorted and comined, e.g. f3t5f4t5 for 'less'
+                    return Object.keys(strokes).sort().join('');
+                }
+
                 function setGlyphIds() {
                     if (idsSet) return;
                     // A glyph can be uniquely identified by it's strokes (sorted)
                     for (var g in glyphs) {
-                        var id = Object.keys(glyphs[g].strokes).sort().join('');
+                        //var id = Object.keys(glyphs[g].strokes).sort().join('');
+                        var id = strokes2id(glyphs[g].strokes);
                         glyphs[g].id = id;
                         glyphlookup[id] = glyphs[g];
                     }
                     idsSet = true;
                 }
 
+                // Attempt at more compact id - just the numbers, in hex. E.g. f8t10f9t10 -> 8a9a
                 function setGlyphId2s() {
                     // A glyph can be uniquely identified by it's strokes (sorted)
                     for (var g in glyphs) {
