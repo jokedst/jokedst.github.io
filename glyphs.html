@@ -71,17 +71,25 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
         .text a {
             color: #00833b;
         }
-
+        .badge {
+            float: right;
+            border: 1px solid #B1B100;
+            display: block;
+            width: 10px;
+            height: 10px;
+            background-color: #474716;
+            margin-left: 5px;
+        }
 	</style>
     <script> // google analytics
-        (function (i, s, o, g, r, a, m) {
-            i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
-                (i[r].q = i[r].q || []).push(arguments)
-            }, i[r].l = 1 * new Date(); a = s.createElement(o),
-            m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
-        })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
-        ga('create', 'UA-48558197-1', 'jokedst.github.io');
-        ga('send', 'pageview');
+        //(function (i, s, o, g, r, a, m) {
+        //    i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+        //        (i[r].q = i[r].q || []).push(arguments)
+        //    }, i[r].l = 1 * new Date(); a = s.createElement(o),
+        //    m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+        //})(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+        //ga('create', 'UA-48558197-1', 'jokedst.github.io');
+        //ga('send', 'pageview');
     </script>
 </head>
     <body>
@@ -101,7 +109,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 		</div>
         <div id='LessonsDiv' style='display:none'>
             <div class="lbtn" onclick="startLesson(-1)" >No lesson - free play!</div>
-            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.01<br/>Feedback: <a href="mailto:jokedst@gmail.com">jokedst@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
+            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.02<br/>Feedback: <a href="mailto:jokedst+glyphs@gmail.com">jokedst+glyphs@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
         </div>
             <script>
                 var r = document.getElementById('glyphsvg'),
@@ -132,7 +140,10 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 					vibrateOn = true;
 				var vibrate = navigator.vibrate || navigator.mozVibrate || navigator.webkitVibrate || null;
 				var currentLesson = -1, lesson = {};
-				var results = null, settings = {};
+				var results = {},
+				    settings = {},
+				    glyphlookup = {},
+				    startedGlyph = +new Date;
 
 				Storage.prototype.setObject = function(key, value) {
 				    this.setItem(key, JSON.stringify(value));
@@ -189,7 +200,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 
                 function randomizeArray(myArray) {
                     var i = myArray.length;
-                    if (i == 0) return;
+                    if (i == 0) return [];
                     while (--i) {
                         var j = Math.floor(Math.random() * (i + 1));
                         var tempi = myArray[i];
@@ -197,6 +208,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         myArray[i] = tempj;
                         myArray[j] = tempi;
                     }
+                    return myArray;
                 };
 
                 window.onload = function () {				
@@ -249,6 +261,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         var btn = document.createElement("div");
                         btn.appendChild(document.createTextNode(lessons[l].name));
                         btn.className = 'lbtn';
+                        btn.id = 'lessonButton' + l;
                         //btn.onclick = function () { var lessonNumber = l; startLesson(lessonNumber); };
                         btn.setAttribute('onClick', 'startLesson(' + l + ')');
 
@@ -267,6 +280,9 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             glyphs[g].strokes['f' + Math.min(lastt, next) + 't' + Math.max(lastt, next)] = 1;
                             lastt = next;
                         }
+                        // Set glyph id
+                        glyphs[g].id = strokes2id(glyphs[g].strokes);
+                        glyphlookup[glyphs[g].id] = glyphs[g];
                         
                         // Add glyph to correct lesson
                         for (l = 0; l < lessons.length; l++) {
@@ -278,8 +294,24 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     }
 
                     // Load old results (if any)
-                    results = window.localStorage.getObject('results');
+                    results = window.localStorage.getObject('results') || {};
                     settings = window.localStorage.getObject('settings') || {};  // An empty object means default settings
+                    
+
+                    // Google analytics
+                    (function(i, s, o, g, r, a, m) {
+                        i['GoogleAnalyticsObject'] = r;
+                        i[r] = i[r] || function() {
+                            (i[r].q = i[r].q || []).push(arguments)
+                        }, i[r].l = 1 * new Date();
+                        a = s.createElement(o),
+                        m = s.getElementsByTagName(o)[0];
+                        a.async = 1;
+                        a.src = g;
+                        m.parentNode.insertBefore(a, m)
+                    })(window, document, 'script', 'http://www.google-analytics.com/analytics.js', 'ga');
+                    ga('create', 'UA-48558197-1', 'jokedst.github.io');
+                    ga('send', 'pageview');
                 };
 
                 function showLessons() {
@@ -288,6 +320,29 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     document.getElementById('glyphsvg').style.display = 'none';
                     document.getElementById('spacer').style.display = 'none';
                     document.getElementById('LessonsDiv').style.display = '';
+                    hideProgressBar();
+                    
+                    // Update achievements
+                    var oldBadges = document.getElementsByClassName('badge');
+                    for (var b = oldBadges.length; b > 0; b--) {
+                        var badge = oldBadges[b-1];
+                        badge.parentNode.removeChild(badge);
+                    }
+                    
+                    if (results && results.lesson) {
+                        for (var l = 0; l < lessons.length; l++) {
+                            if (results.lesson[l] && results.lesson[l].flawless) {
+                                var badges = Math.min(results.lesson[l].flawless, 3);
+                                for (var i = 0; i < badges; i++) {
+                                    var ld = document.getElementById('lessonButton' + l);
+                                    var achive = document.createElement("div");
+                                    //achive.appendChild(document.createTextNode('*'));
+                                    achive.className = 'badge';
+                                    ld.appendChild(achive);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 function startLesson(l) {
@@ -307,7 +362,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         return;
                     }
 
-                    lesson = { glyphsleft: lessons[l].glyphs.slice(0), peeked: false, glyphCount: lessons[l].glyphs.length };
+                    lesson = { glyphsleft: randomizeArray(lessons[l].glyphs.slice(0)), peeked: false, glyphCount: lessons[l].glyphs.length, flawless: true };
 
                     document.getElementById('spacer').textContent = lessons[l].name.toUpperCase();
                     setProgressBar(0);
@@ -393,6 +448,11 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     var ret = '', first = true;
                     var lastp = { x: -1, y: -1 };
                     for (var i = start; i < end; i++) {
+                        
+                        if (points[i] === undefined) {
+                            console.log('wtf? ' + start + ',' + end);
+                        }
+
                         if (first)
                             ret += 'M' + points[i].x + ',' + points[i].y + ' ';
                         else {
@@ -473,7 +533,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     for (var i = 0; i < points.length; i++) {
                         // Find closest target for each point
                         //console.log('i = ' + i);
-                        var best = 999999, bestindex = -1;
+                        var best = cutoff+1, bestindex = -1;
                         for (var t in targets) {
                             var dx = targets[t].x - points[i].x;
                             var dy = targets[t].y - points[i].y;
@@ -488,9 +548,6 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             // calculate vector to animate point along
                             points[i].vx = targets[bestindex].x - points[i].x;
                             points[i].vy = targets[bestindex].y - points[i].y;
-                            // For now just set it, later animate
-                            //points[i].x = targets[bestindex].x;
-                            //points[i].y = targets[bestindex].y;
                             points[i].tx = targets[bestindex].x;
                             points[i].ty = targets[bestindex].y;
                             points[i].last = bestindex;
@@ -541,9 +598,6 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             
                             points[i].vx = target.x - points[i].x;
                             points[i].vy = target.y - points[i].y;
-                            // For now set, later animate
-                            //points[i].x = target.x;
-                            //points[i].y = target.y;
                             points[i].tx = target.x;
                             points[i].ty = target.y;
                         }
@@ -556,50 +610,26 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     }
 
                     // Glyph detection
-                    var ss = '';
-                    for (var s in strokes) ss += s + ',';
-                    console.log('strokes: ' + ss);
-
-                    var lastGlyph = glyph;
-                    glyph = null;
-                    for (var g in glyphs) {
-                        var found = true;
-                        for (var st in glyphs[g].strokes) {
-                            //console.log('checking strokes for ' + st);
-                            if (strokes[st] != 1) {
-                                //console.log('NOPE!');
-                                found = false;
-                                break;
-                            }
-                        }
-                        if (found) {
-                            for (st in strokes) {
-                                //console.log('checking glyph for ' + st);
-                                if (!glyphs[g].strokes[st]) {
-                                    //console.log('NOPE!');
-                                    found = false;
-                                    break;
-                                }
-                            }
-                        }
-                        if (found) {
-                            glyph = glyphs[g];
-                            break;
-                        }
-                    }
+                    var id = strokes2id(strokes);
+                    glyph = glyphlookup[id] ? glyphlookup[id] : null;
 
                     lesson.newCorrect = false;
                     if (glyph != null) {
                         console.log('found ' + glyph.name[0]);
-                        if (currentLesson != -1 && glyph.name[0] == lesson.glyphsleft[lesson.currentIndex].name[0]) {
+                        if (currentLesson != -1 && lesson.glyphsleft.length > 0 && glyph.name[0] == lesson.glyphsleft[lesson.currentIndex].name[0]) {
                             console.log('drew correctly!');
                             txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
+
+                            var timeTaken = (+new Date) - startedGlyph;
+                            console.log('it took ' + timeTaken + ' time');
                             if (!lesson.peeked) {
                                 console.log('progress: ' + (lesson.glyphCount - lesson.glyphsleft.length) * 100.0 / lesson.glyphCount);
                                 setProgressBar((lesson.glyphCount - lesson.glyphsleft.length + 1) * 100.0 / lesson.glyphCount);
+                            } else {
+                                lesson.flawless = false;
                             }
                             if (!lesson.drewCorrect) {
-                                // They have now drawn the same again (after completing it)
+                                // They have not drawn the same again (after completing it)
                                 lesson.newCorrect = true;
                             }
                             lesson.drewCorrect = true;
@@ -607,10 +637,12 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             var nameIndex = glyphsShown++ % glyph.name.length;
                             txt.textContent = glyph.name[nameIndex].toUpperCase();
                             lesson.drewIncorrectCount++;
+                            lesson.flawless = false;
                         }
                     } else {
                         txt.textContent = 'UNKNOWN';
                         lesson.drewIncorrectCount++;
+                        lesson.flawless = false;
                     }
 
                     //window.requestAnimationFrame(looper);
@@ -640,10 +672,24 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             // Increase progress bar
                         }
                         if (lesson.glyphsleft.length == 0) {
-                            txt.textContent = "LESSON DONE!";
+                            if (txt.textContent == "LESSON DONE!" || txt.textContent == "DONE! FLAWLESS!") {
+                                // Start next lesson
+                                var nextLesson = (currentLesson + 1) % lessons.length;
+                                startLesson(nextLesson);
+                                return;
+                            }
+                            if (lesson.flawless) {
+                                txt.textContent = "DONE! FLAWLESS!";
+                                if (!settings.dontSaveResults) {
+                                    var lessonResults = (results.lesson || (results.lesson = []));
+                                    var thisLessonResults = lessonResults[currentLesson] || (lessonResults[currentLesson] = {});
+                                    thisLessonResults.flawless = (thisLessonResults.flawless || 0) + 1;
+                                    window.localStorage.setObject('results', results);
+                                }
+                            } else
+                                txt.textContent = "LESSON DONE!";
                             glyph = null;
                         } else {
-                            
                             // Only switch glyph if there is more than one left. 
                             var left = lesson.glyphsleft.length;
                             if (left != 1) {
@@ -673,11 +719,12 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         p.setAttribute('d', 'M0,0');
                     }
                     p.setAttribute('stroke', obj2col(okcolor));
+                    startedGlyph = +new Date;
                 }
                 
                 function showCurrentGlyph() {
-                    // TODO: when drawn wrong, show correct glyph
                     if (currentLesson != -1) {
+                        // When drawn wrong, show correct glyph
                         glyph = lesson.glyphsleft[lesson.currentIndex];
                         txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
                     }
@@ -735,6 +782,11 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         }
                         txt.style.backgroundColor = '';
                         console.log('done looping for now');
+                        
+                        if (!settings.pauseBetweenGlyphs && currentLesson != -1 && lesson.drewCorrect) {
+                            showNextGlyph();
+                            return;
+                        }
                     } else {
                         for (var i = starti; i < stopi; i++) {
                             //points[i].x += points[i].vx * deltac;
@@ -761,6 +813,82 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     p.setAttribute('d', path);
                     
                     lasttime = current;
+                }
+
+                var idsSet = false;
+                function strokes2id(strokes) {
+                    // A glyph id is just it's strokes - sorted and combined, e.g. f3t5f4t5 for 'less'
+                    return Object.keys(strokes).sort().join('');
+                }
+
+                function setGlyphIds() {
+                    if (idsSet) return;
+                    // A glyph can be uniquely identified by it's strokes (sorted)
+                    for (var g in glyphs) {
+                        //var id = Object.keys(glyphs[g].strokes).sort().join('');
+                        var id = strokes2id(glyphs[g].strokes);
+                        glyphs[g].id = id;
+                        glyphlookup[id] = glyphs[g];
+                    }
+                    idsSet = true;
+                }
+
+                // Attempt at more compact id - just the numbers, in hex. E.g. f8t10f9t10 -> 8a9a
+                function setGlyphId2s() {
+                    // A glyph can be uniquely identified by it's strokes (sorted)
+                    for (var g in glyphs) {
+                        var id2 = Object.keys(glyphs[g].strokes).map(function (s) { return (s.substring(1).split('t').map(function(num) { return parseInt(num, 10).toString(11); }).join('')); }).sort().join('');
+                        glyphs[g].id2 = id2;
+                        glyphlookup[id2] = glyphs[g];
+                    }
+                }
+
+                // Splits a string into parts of length 'length'
+                function splitString(str, len) {
+                    var parts = Math.ceil(str.length / len),
+                        ret = new Array(parts),
+                        offset = 0;
+
+                    for (var i = 0; i < parts; i++)
+                        ret[i] = str.substring(offset, offset += len);
+
+                    return ret;
+                }
+
+                // Transformation matrixes for finding related glyhs. Since the targets are one dimensional the matrixes are one dimensional vectors (aka arrays)
+                var mirrorVerticalMatrix = [0, 2, 1, 4, 3, 5, 7, 6, 9, 8, 10];
+                var mirrorHorizontalMatrix = [10, 8, 4, 6, 7, 5, 3, 4, 1, 2, 0];
+                var rotate90Matrix = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+                
+                function transformNode(node, matrix) {
+                    // Matrix multiplication in one dimension is easy!
+                    return matrix[node];
+                }
+                
+                // usage: findTransformedGlyphs(mirrorHorizontalMatrix), findTransformedGlyphs(mirrorVerticalMatrix), findTransformedGlyphs(rotate90Matrix)
+                function findTransformedGlyphs(matrix) {
+                    setGlyphIds();
+                    var pairs = {};
+                    for (var g in glyphs) {
+                        var mirrorStrokes = {};
+                        for (var s in glyphs[g].strokes) {
+                            var nodes = s.substring(1).split('t').map(function (num) { return transformNode(parseInt(num, 10), matrix); });
+                            var mirrorStroke = 'f' + Math.min(nodes[0], nodes[1]) + 't' + Math.max(nodes[0], nodes[1]);
+                            mirrorStrokes[mirrorStroke] = 1;
+                        }
+                        var id = Object.keys(mirrorStrokes).sort().join('');
+                        if (id < glyphs[g].id && glyphlookup[id] != undefined) {
+                            console.log('found mirror: ' + glyphs[g].name[0] + ' ~= ' + glyphlookup[id].name[0]);
+                            pairs[id] = glyphs[g].id;
+                        }
+                    }
+                    return pairs;
+                }
+                
+                function listGlyphIds() {
+                    for (var g in glyphs) {
+                        console.log('GlyphNames.Add("' + glyphs[g].id2 + '", "' + glyphs[g].name[0] + '");');
+                    }
                 }
             </script>
     </body>
