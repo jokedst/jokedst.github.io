@@ -109,7 +109,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 		</div>
         <div id='LessonsDiv' style='display:none'>
             <div class="lbtn" onclick="startLesson(-1)" >No lesson - free play!</div>
-            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.01<br/>Feedback: <a href="mailto:jokedst+glyphs@gmail.com">jokedst+glyphs@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
+            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.02<br/>Feedback: <a href="mailto:jokedst+glyphs@gmail.com">jokedst+glyphs@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
         </div>
             <script>
                 var r = document.getElementById('glyphsvg'),
@@ -320,11 +320,12 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     document.getElementById('glyphsvg').style.display = 'none';
                     document.getElementById('spacer').style.display = 'none';
                     document.getElementById('LessonsDiv').style.display = '';
+                    hideProgressBar();
                     
                     // Update achievements
                     var oldBadges = document.getElementsByClassName('badge');
-                    for (var b = 0; b < oldBadges.length; b++) {
-                        var badge = oldBadges[b];
+                    for (var b = oldBadges.length; b > 0; b--) {
+                        var badge = oldBadges[b-1];
                         badge.parentNode.removeChild(badge);
                     }
                     
@@ -341,7 +342,6 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                                 }
                             }
                         }
-                        
                     }
                 }
 
