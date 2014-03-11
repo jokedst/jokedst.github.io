@@ -622,6 +622,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 
                             var timeTaken = (+new Date) - startedGlyph;
                             console.log('it took ' + timeTaken + ' time');
+                            document.getElementById('spacer').textContent = timeTaken + ' ms';
                             if (!lesson.peeked) {
                                 console.log('progress: ' + (lesson.glyphCount - lesson.glyphsleft.length) * 100.0 / lesson.glyphCount);
                                 setProgressBar((lesson.glyphCount - lesson.glyphsleft.length + 1) * 100.0 / lesson.glyphCount);
@@ -665,6 +666,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 function setScore(glyphId, performance) {
                     // Calculates and saves a score based on the user perfomance. This should be tweaked.
                     // TODO: calculate score
+                    var score = 0;
+                    
                     
                     // Update last5 results for this glyph
                     var glyphResults = getResultObject('glyph', glyphId);
