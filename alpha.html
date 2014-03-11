@@ -631,6 +631,10 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             if (!lesson.drewCorrect) {
                                 // They have not drawn the same again (after completing it)
                                 lesson.newCorrect = true;
+
+                                if (!settings.dontSaveResults) {
+                                    setScore(glyph.id, { peeked: lesson.peeked, tries: lesson.drewIncorrectCount, time: timeTaken, date: (+new Date), gaveup: false });
+                                }
                             }
                             lesson.drewCorrect = true;
                         } else {
@@ -658,6 +662,20 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     return '{x:' + p.x + ', y:' + p.y + '}';
                 }
                 
+                function setScore(glyphId, performance) {
+                    // Calculates and saves a score based on the user perfomance. This should be tweaked.
+                    // TODO: calculate score
+                    
+                    // Update last5 results for this glyph
+                    var glyphResults = getResultObject('glyph', glyphId);
+                    if (!glyphResults.last5) glyphResults.last5 = [];
+                    glyphResults.last5.push(performance);
+                    if (glyphResults.last5.length > 5) glyphResults.last5.shift();
+                    
+                    //Save
+                    window.localStorage.setObject('results', results);
+                }
+                
                 function showNextGlyph() {
                     if (currentLesson == -1) {
                         var index = glyphsShown % glyphs.length;
@@ -681,8 +699,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             if (lesson.flawless) {
                                 txt.textContent = "DONE! FLAWLESS!";
                                 if (!settings.dontSaveResults) {
-                                    var lessonResults = (results.lesson || (results.lesson = []));
-                                    var thisLessonResults = lessonResults[currentLesson] || (lessonResults[currentLesson] = {});
+                                    var thisLessonResults = getResultObject('lesson', currentLesson);
                                     thisLessonResults.flawless = (thisLessonResults.flawless || 0) + 1;
                                     window.localStorage.setObject('results', results);
                                 }
@@ -699,6 +716,11 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                                 lesson.currentIndex = tempi;
                             } else lesson.currentIndex = 0;
                             
+                            if (!lesson.drewCorrect && !settings.dontSaveResults && glyph != null) {
+                                // User gave up and clicked 'next'. Record bad score.
+                                setScore(glyph.id, { peeked: lesson.peeked, tries: lesson.drewIncorrectCount, time: ((+new Date) - startedGlyph), date: (+new Date), gaveup: true });
+                            }
+                            
                             glyph = lesson.glyphsleft[lesson.currentIndex];
                             lesson.nameindex = Math.floor(Math.random() * glyph.name.length);
                             txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
@@ -714,6 +736,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             points.push(targets[glyph.points[i]]);
                         }
                         p.setAttribute('d', points2path(0, points.length));
+                        lesson.peeked = true;
                     } else {
                         points = [];
                         p.setAttribute('d', 'M0,0');
@@ -888,6 +911,29 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 function listGlyphIds() {
                     for (var g in glyphs) {
                         console.log('GlyphNames.Add("' + glyphs[g].id2 + '", "' + glyphs[g].name[0] + '");');
+                    }
+                }
+                
+                function getResultObject(section, index) {
+                    // Results are an empty object by default, if something is missing we create it when requested
+                    if (!results[section])
+                    switch(section) {
+                        case 'lesson': results[section] = []; break;
+                        case 'glyph': results[section] = {}; break;
+                    }
+                    var sectionResults = results[section];
+                    return sectionResults[index] || (sectionResults[index] = {});
+                }
+                
+                // size: 45551
+                function DEBUGcreateFakeResults() {
+                    for (var l in lessons) {
+                        getResultObject('lesson', l).flawless = 2;
+                    }
+                    for (var g in glyphs) {
+                        for (var i = 0; i < 6;i++)
+                            setScore(glyphs[g].id, { p: 1, a: 5, t: 12345, d: (+new Date), g: 1 });
+                            //setScore(glyphs[g].id, { peeked: true, tries: 5, time: 12345, date: (+new Date), gaveup: true });
                     }
                 }
             </script>
