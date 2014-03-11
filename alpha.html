@@ -109,7 +109,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 		</div>
         <div id='LessonsDiv' style='display:none'>
             <div class="lbtn" onclick="startLesson(-1)" >No lesson - free play!</div>
-            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.02<br/>Feedback: <a href="mailto:jokedst+glyphs@gmail.com">jokedst+glyphs@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
+            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.03<br/>Feedback: <a href="mailto:jokedst+glyphs@gmail.com">jokedst+glyphs@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
         </div>
             <script>
                 var r = document.getElementById('glyphsvg'),
@@ -143,7 +143,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 				var results = {},
 				    settings = {},
 				    glyphlookup = {},
-				    startedGlyph = +new Date;
+				    startedGlyph = Date.now();
 
 				Storage.prototype.setObject = function(key, value) {
 				    this.setItem(key, JSON.stringify(value));
@@ -448,7 +448,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     var ret = '', first = true;
                     var lastp = { x: -1, y: -1 };
                     for (var i = start; i < end; i++) {
-                        
+
                         if (points[i] === undefined) {
                             console.log('wtf? ' + start + ',' + end);
                         }
@@ -462,7 +462,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         lastp = points[i];
                         first = false;
                     }
-                    if(verbose)console.log(ret);
+                    if (verbose) console.log(ret);
                     return ret.length > 0 ? ret : 'M0,0';
                 }
 
@@ -483,7 +483,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     points = [point];
                     strokes = {};
                     glyph = null;
-					lastTouchedTarget = -1;
+                    lastTouchedTarget = -1;
                     drawnPath = 'M' + point.x + ',' + point.y + ' ';
                     p.setAttribute('stroke', obj2col(drawcolor));
                     p.setAttribute('d', points2path(0, points.length));
@@ -495,26 +495,26 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 function move(e) {
                     if (isDown) {
                         var point = getCoords(e);
-						
+
                         points.push(point);
                         drawnPath += 'L' + point.x + ',' + point.y + ' ';
                         //drawnPath += 'L' + getCoords(e, this) + ' ';
                         //p.setAttribute('d', points2path(0, points.length));
                         //console.log(drawnPath);
                         p.setAttribute('d', drawnPath);
-						
-						// Is it on a new target? If so, vibrate.
-						if(vibrateOn && vibrate){
-							for (var t in targets) {
-								if (Math.pow(targets[t].x - point.x,2) + Math.pow(targets[t].y - point.y,2) <= cutoff) {
-									if(t != lastTouchedTarget){
-										lastTouchedTarget = t;
-										navigator.vibrate([30]);
-										}
-										break;
-								}
-							}
-						}
+
+                        // Is it on a new target? If so, vibrate.
+                        if (vibrateOn && vibrate) {
+                            for (var t in targets) {
+                                if (Math.pow(targets[t].x - point.x, 2) + Math.pow(targets[t].y - point.y, 2) <= cutoff) {
+                                    if (t != lastTouchedTarget) {
+                                        lastTouchedTarget = t;
+                                        navigator.vibrate([30]);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
                     }
 
                     if (isTouchEvent(e))
@@ -533,12 +533,12 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     for (var i = 0; i < points.length; i++) {
                         // Find closest target for each point
                         //console.log('i = ' + i);
-                        var best = cutoff+1, bestindex = -1;
+                        var best = cutoff + 1, bestindex = -1;
                         for (var t in targets) {
                             var dx = targets[t].x - points[i].x;
                             var dy = targets[t].y - points[i].y;
                             var dist2 = dx * dx + dy * dy;
-                            
+
                             if (dist2 < best && dist2 <= cutoff) {
                                 best = dist2;
                                 bestindex = t;
@@ -557,13 +557,13 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                                 strokes['f' + Math.min(lastt, bestindex) + 't' + Math.max(lastt, bestindex)] = 1;
                             }
                             lastt = bestindex;
-                        }else if (lastt != -1) {
+                        } else if (lastt != -1) {
                             points[i].last = lastt;
                         } else {
                             starti = i + 1;
                         }
                     }
-                    
+
                     // Now do it backwards to find next valid point
                     stopi = points.length;
                     lastt = -1;
@@ -578,7 +578,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             stopi = i;
                         }
                     }
-                    
+
                     // Finally go through all (valid) points a last time to see where to interpolate them
                     for (i = starti; i < stopi; i++) {
                         //console.log('p' + i + ':{close:' + points[i].closeby + ', next:' + points[i].next + ', last:' + points[i].last)
@@ -595,14 +595,14 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                                 }
                             }
                             //console.log('target found: ' + pp(target));
-                            
+
                             points[i].vx = target.x - points[i].x;
                             points[i].vy = target.y - points[i].y;
                             points[i].tx = target.x;
                             points[i].ty = target.y;
                         }
                     }
-                    
+
                     // Store start position for each point
                     for (i = starti; i < stopi; i++) {
                         points[i].ox = points[i].x;
@@ -620,11 +620,12 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             console.log('drew correctly!');
                             txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
 
-                            var timeTaken = (+new Date) - startedGlyph;
+                            var timeTaken = Date.now() - startedGlyph;
                             console.log('it took ' + timeTaken + ' time');
+                            // DEBUG: Show time taken in UI
                             document.getElementById('spacer').textContent = timeTaken + ' ms';
                             if (!lesson.peeked) {
-                                console.log('progress: ' + (lesson.glyphCount - lesson.glyphsleft.length) * 100.0 / lesson.glyphCount);
+                                // Update progress bar
                                 setProgressBar((lesson.glyphCount - lesson.glyphsleft.length + 1) * 100.0 / lesson.glyphCount);
                             } else {
                                 lesson.flawless = false;
@@ -634,7 +635,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                                 lesson.newCorrect = true;
 
                                 if (!settings.dontSaveResults) {
-                                    setScore(glyph.id, { peeked: lesson.peeked, tries: lesson.drewIncorrectCount, time: timeTaken, date: (+new Date), gaveup: false });
+                                    setScore(glyph.id, { peeked: lesson.peeked, tries: lesson.drewIncorrectCount, time: timeTaken, date: Date.now(), gaveup: false });
                                 }
                             }
                             lesson.drewCorrect = true;
@@ -650,32 +651,48 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         lesson.flawless = false;
                     }
 
-                    //window.requestAnimationFrame(looper);
                     startLoop();
-                    
-                    //console.log('starti ' + starti + ', stopi = ' + stopi);
-                    //var path = points2path(starti, stopi, true);
-                    //console.log(path);
-                    //p.setAttribute('d', path);
                 }
-                
+
                 function pp(p) {
                     return '{x:' + p.x + ', y:' + p.y + '}';
                 }
                 
+                function calculateScore(performance) {
+                    // Score goes to 100. IF the user never seen the glyph consider the score 0.
+                    var score = 100;
+                    // remove time taken, up to 10 seconds, -2 points per second
+                    score -= Math.min(Math.floor(performance.time / 500), 20);
+                    // if peeked or gave up, loose 60 points
+                    if (performance.peeked || performance.gaveup)
+                        score -= 60;
+                    // Failed attempts cost 10 points each, up to 4 attempts
+                    score -= Math.min(performance.tries * 10, 40);
+                    // if this is an old result, reduce score since it might been forgotten since then 
+                    // NOTE: for this to work the scores must be recalculated, e.g. on load from storage
+                    var daysAgo = Math.floor((Date.now() - performance.date) / (24 * 60 * 60 * 1000));
+                    score -= Math.min(daysAgo, 30);
+                    // Don't do negative scores
+                    return Math.min(0, score);
+                }
+                
                 function setScore(glyphId, performance) {
                     // Calculates and saves a score based on the user perfomance. This should be tweaked.
-                    // TODO: calculate score
-                    var score = 0;
+                    // Calculate score
+                    performance.score = calculateScore(performance);
                     
-                    
-                    // Update last5 results for this glyph
+                    // Update last 5 results for this glyph
                     var glyphResults = getResultObject('glyph', glyphId);
                     if (!glyphResults.last5) glyphResults.last5 = [];
                     glyphResults.last5.push(performance);
                     if (glyphResults.last5.length > 5) glyphResults.last5.shift();
                     
-                    //Save
+                    // Update glyph average score
+                    var totalScore = 0;
+                    for (var i = 0; i < glyphResults.last5.length; i++) totalScore += glyphResults.last5[i].score;
+                    glyphlookup[glyphId].avgScore = totalScore / glyphResults.last5.length;
+                    
+                    // Save
                     window.localStorage.setObject('results', results);
                 }
                 
@@ -689,8 +706,6 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         if (lesson.currentIndex != undefined && !lesson.peeked && lesson.drewCorrect) {
                             // Mark this glyph as done
                             lesson.glyphsleft.splice(lesson.currentIndex, 1);
-                            
-                            // Increase progress bar
                         }
                         if (lesson.glyphsleft.length == 0) {
                             if (txt.textContent == "LESSON DONE!" || txt.textContent == "DONE! FLAWLESS!") {
@@ -721,7 +736,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                             
                             if (!lesson.drewCorrect && !settings.dontSaveResults && glyph != null) {
                                 // User gave up and clicked 'next'. Record bad score.
-                                setScore(glyph.id, { peeked: lesson.peeked, tries: lesson.drewIncorrectCount, time: ((+new Date) - startedGlyph), date: (+new Date), gaveup: true });
+                                setScore(glyph.id, { peeked: lesson.peeked, tries: lesson.drewIncorrectCount, time: (Date.now() - startedGlyph), date: Date.now(), gaveup: true });
                             }
                             
                             glyph = lesson.glyphsleft[lesson.currentIndex];
@@ -745,7 +760,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         p.setAttribute('d', 'M0,0');
                     }
                     p.setAttribute('stroke', obj2col(okcolor));
-                    startedGlyph = +new Date;
+                    startedGlyph = Date.now();
                 }
                 
                 function showCurrentGlyph() {
@@ -781,17 +796,17 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 r.addEventListener('mouseout', up, false);
                 
                 var cc = 0, starttime = 0, lasttime = 0;
-                var started = new Date().getTime();
+                var started = Date.now();
                 function startLoop() {
                     cc = 0;
-                    starttime = lasttime = +new Date;
-                    started = new Date().getTime();
+                    starttime = lasttime = Date.now();
+                    started = Date.now();
                     window.requestAnimationFrame(looper, true);
                 }
 
                 var looptimeMs = 500.0;
                 function looper() {
-                    var current = new Date().getTime(),
+                    var current = Date.now(),
                         delta = current - started,
                         deltac = current - lasttime;
                     //console.log("frame " + cc + ", date = " + data + ', st = ' + starttime);
@@ -935,8 +950,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     }
                     for (var g in glyphs) {
                         for (var i = 0; i < 6;i++)
-                            setScore(glyphs[g].id, { p: 1, a: 5, t: 12345, d: (+new Date), g: 1 });
-                            //setScore(glyphs[g].id, { peeked: true, tries: 5, time: 12345, date: (+new Date), gaveup: true });
+                            setScore(glyphs[g].id, { p: 1, a: 5, t: 12345, d: Date.now(), g: 1 });
+                        //setScore(glyphs[g].id, { peeked: true, tries: 5, time: 12345, date: Date.now(), gaveup: true, score:90 });
                     }
                 }
             </script>
