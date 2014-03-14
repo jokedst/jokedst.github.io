@@ -423,7 +423,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         var svg = document.getElementById('listsvg');
                         var size = Math.floor(window.innerWidth / 6);
 
-                        svg.style.height = Math.floor(glyphs.length * size + size);
+                        svg.style.height = Math.floor(glyphs.length * size * 0.95 + size);
                         for (var g = 0; g < glyphs.length; g++) 
                             createGlyph(svg, glyphs[g].points, Math.round(10+ + (g % 2) * size*0.55), Math.floor(5 + g*size*0.95), (size / 100), glyphs[g].name.join('/').toUpperCase());
                         //svg.style.height = glyphs.length * 95 + 100;
