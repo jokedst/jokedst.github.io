@@ -80,7 +80,7 @@ var glyphs = [
     { name: ["Mind"], points: [3, 5, 10, 6, 3], family: "a_s" },
     { name: ["Nourish"], points: [5, 10, 8, 6, 5], family: "a_s" },
     { name: ["Open", "Accept"], points: [6, 7, 10, 6], family: "a_s" },
-    { name: ["Recharge"], points: [0, 1, 3, 5, 0], family: "a_s" },
+    { name: ["Recharge", "Repair"], points: [0, 1, 3, 5, 0], family: "a_s" },
     { name: ["Soul", "Spirit", "Life Force"], points: [4, 5, 10, 7, 4], family: "a_s" },
     { name: ["Victory"], points: [0, 3, 10, 4, 0], family: "a_s" },
     { name: ["You", "Other"], points: [0, 6, 7, 0], family: "a_s" },
@@ -227,3 +227,14 @@ var sequenses = [
     "Shaper Portal Mind Restraint",
     "Help Enlightened Capture All Portal"
 ];
+var targ = [{ x: 50, y: 14.4337567 },
+    { x: 12.5, y: 36.0843918 },
+    { x: 87.5, y: 36.0843918 },
+    { x: 31.25, y: 46.9097094 },
+    { x: 68.75, y: 46.9097094 },
+    { x: 50, y: 57.7350269 },
+    { x: 31.25, y: 68.5603445 },
+    { x: 68.75, y: 68.5603445 },
+    { x: 12.5, y: 79.385662 },
+    { x: 87.5, y: 79.385662 },
+    { x: 50, y: 101.0362971 }];
