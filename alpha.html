@@ -95,7 +95,32 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
         .steel {
             border: 1px solid #000;
             background-color: #474747;
-            
+        }
+
+        .bigselect {
+            width: 100%;
+            height: 9vw;
+            border: 3px solid #6be7c5;
+            background-color: #000;
+            color: #6be7c5;
+            font-family: sans-serif;
+            font-size: 5vw;
+            text-align: center;
+        }
+        .glyphCircle {
+            fill: #ffd700;
+        }
+        .backbtn {
+	        background: linear-gradient(to bottom, #08757b 0%,#1f464a 20%,#1f464a 80%,#08757b 100%);
+            border: 3px solid #6be7c5;
+	        color: #6be7c5;
+            font-family: sans-serif;
+            font-size: 5vw;
+            /*float: right;*/
+            position: absolute;
+            right: 3px;
+            padding: 0px 20px 0px 20px;
+            display: none;
         }
 	</style>
     <script> // google analytics
@@ -110,6 +135,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
     </script>
 </head>
     <body>
+        <div class="backbtn" onclick="showMenu()" id="backbutton">&lt;</div>
         <div id="progress-container" style="width:80px; height:10px; border:1px solid #00e969; margin:3px; position: fixed; right: 0px; display: none">
             <div id="progress-bar" style="width:70%; background-image:linear-gradient( 90deg, #00833b, #00ef73 ); height:inherit; float: left"></div>
             <div id="anti-progress-bar" style="width:30%; background-image:linear-gradient( 90deg, #520000, #840000 ); height:inherit; float: left"></div>
@@ -117,6 +143,20 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
         <div id="spacer" class="text"></div>
         <div style="background: #000" width="100%" id="adiv" onclick="textClick()">UNKNOWN</div>
         <svg xmlns="http://www.w3.org/2000/svg" width="50" height="52" id="glyphsvg" class="drawsvg">
+            
+            <g id="drawCircleGroup" >
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle0" />
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle1" />
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle2" />
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle3" />
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle4" />
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle5" />
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle6" />
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle7" />
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle8" />
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle9" />
+                <circle cx="0" cy="0" r="0" pointer-events="none" class="glyphCircle" style="display:none" id="glyphCircle10" />
+            </g>
             <path id="p" stroke="#aef" stroke-width="2" fill="none" pointer-events="none"/>
         </svg>
         <div style='overflow:auto' id="mainButtons">
@@ -130,949 +170,1085 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
         </div>
         <div id='LessonsDiv' style='display:none'>
             <div class="lbtn" onclick="startLesson(-1)" >No lesson - free play!</div>
-            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.03<br/>Feedback: <a href="mailto:jokedst+glyphs@gmail.com">jokedst+glyphs@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
+            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.04<br/>Feedback: <a href="mailto:jokedst+glyphs@gmail.com">jokedst+glyphs@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
         </div>
         <div id="glyphList" style="display:none">
+            <select class="bigselect" onchange="resort(this.value)">
+                <option value="glyph">by glyph size</option>
+                <option value="lesson">by lesson</option>
+                <option value="name">by name</option>
+            </select>
             <svg id="listsvg" >
                 <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0" stop-color="#427563"/>
                     <stop offset="50%" stop-color="#31514A"/>
                     <stop offset="100%" stop-color="#427563"/>
                 </linearGradient>
-                
+                <g id="glyphListGroup"></g>
             </svg>
             <div class="btn" onclick="showMenu()" style="float: left;margin-left:0px">MENU</div>
         </div>
-            <script>
-                var r = document.getElementById('glyphsvg'),
-                    p = document.getElementById('p'),
-                    txt = document.getElementById('adiv'),
-                    drawnPath = '',
-                    isDown = false,
-                    points = [], starti=0, stopi=0,
-                    cutoff = 1000;
-                var targets = [{ x: 250, y: 30 },
-                               { x: 54, y: 143 },
-                               { x: 446, y: 143 },
-                               { x: 152, y: 200 },
-                               { x: 348, y: 200 },
-                               { x: 250, y: 257 },
-                               { x: 152, y: 313 },
-                               { x: 348, y: 313 },
-                               { x: 54, y: 370 },
-                               { x: 446, y: 370 },
-                               { x: 250, y: 483 }];
-                var drawcolor = { r: 255, g: 255, b: 0 },
-                    okcolor = { r: 50, g: 255, b: 50 },
-                    badcolor = { r: 255, g: 50, b: 50 };
-                var strokes = {};
-                var glyph = null,
-                    glyphsShown = 0;
-				var lastTouchedTarget = -1,
-					vibrateOn = true;
-				var vibrate = navigator.vibrate || navigator.mozVibrate || navigator.webkitVibrate || null;
-				var currentLesson = -1, lesson = {};
-				var results = {},
-				    settings = {},
-				    glyphlookup = {},
-				    startedGlyph = Date.now();
+        <script>
+            var r = document.getElementById('glyphsvg'),
+                p = document.getElementById('p'),
+                txt = document.getElementById('adiv'),
+                drawnPath = '',
+                isDown = false,
+                points = [], starti=0, stopi=0,
+                cutoff = 1000;
+            var targets = [{ x: 250, y: 30 },
+                { x: 54, y: 143 },
+                { x: 446, y: 143 },
+                { x: 152, y: 200 },
+                { x: 348, y: 200 },
+                { x: 250, y: 257 },
+                { x: 152, y: 313 },
+                { x: 348, y: 313 },
+                { x: 54, y: 370 },
+                { x: 446, y: 370 },
+                { x: 250, y: 483 }];
+            var drawcolor = { r: 255, g: 255, b: 0 },
+                okcolor = { r: 50, g: 255, b: 50 },
+                badcolor = { r: 255, g: 50, b: 50 };
+            var strokes = {};
+            var glyph = null,
+                glyphsShown = 0;
+            var lastTouchedTarget = -1,
+                vibrateOn = true;
+            var vibrate = navigator.vibrate || navigator.mozVibrate || navigator.webkitVibrate || null;
+            var currentLesson = -1, lesson = {};
+            var results = {},
+                settings = {},
+                glyphlookup = {},
+                startedGlyph = Date.now();
 
-				Storage.prototype.setObject = function(key, value) {
-				    this.setItem(key, JSON.stringify(value));
-				};
+            Storage.prototype.setObject = function(key, value) {
+                this.setItem(key, JSON.stringify(value));
+            };
 
-				Storage.prototype.getObject = function(key) {
-				    var value = this.getItem(key);
-				    return value && JSON.parse(value);
-				};
+            Storage.prototype.getObject = function(key) {
+                var value = this.getItem(key);
+                return value && JSON.parse(value);
+            };
 				
-				function setProgressBar(percent) {
-				    percent = Math.floor(percent);
-				    document.getElementById('anti-progress-bar').style.width = (100 - percent) + '%';
-				    document.getElementById('progress-bar').style.width = percent + '%';
-				    document.getElementById('progress-container').style.display = '';
-				}
+            function setProgressBar(percent) {
+                percent = Math.floor(percent);
+                document.getElementById('anti-progress-bar').style.width = (100 - percent) + '%';
+                document.getElementById('progress-bar').style.width = percent + '%';
+                document.getElementById('progress-container').style.display = '';
+            }
 
-				function hideProgressBar() {
-				    document.getElementById('progress-container').style.display = 'none';
-				}
+            function hideProgressBar() {
+                document.getElementById('progress-container').style.display = 'none';
+            }
                 
-                function interpolateColor(from, to, delta) {
-                    var red = Math.round((from.r * (1.0 - delta)) + (to.r * delta));
-                    var green = Math.round((from.g * (1.0 - delta)) + (to.g * delta));
-                    var blue = Math.round((from.b * (1.0 - delta)) + (to.b * delta));
-                    return 'rgb(' + red + ',' + green + ',' + blue + ')';
+            function interpolateColor(from, to, delta) {
+                var red = Math.round((from.r * (1.0 - delta)) + (to.r * delta));
+                var green = Math.round((from.g * (1.0 - delta)) + (to.g * delta));
+                var blue = Math.round((from.b * (1.0 - delta)) + (to.b * delta));
+                return 'rgb(' + red + ',' + green + ',' + blue + ')';
+            }
+                
+            function obj2col(color) {
+                var s = 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
+                return s;
+            }
+                
+            function cssrules() {
+                var rules = {}; var ds = document.styleSheets, dsl = ds.length;
+                for (var i = 0; i < dsl; ++i) {
+                    var dsi = ds[i].cssRules, dsil = dsi.length;
+                    for (var j = 0; j < dsil; ++j) rules[dsi[j].selectorText] = dsi[j];
                 }
+                return rules;
+            };
                 
-                function obj2col(color) {
-                    var s = 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')';
-                    return s;
+            function css_getclass(name) {
+                var ds = document.styleSheets;
+                for (var i = 0, dsl = ds.length; i < dsl; ++i) {
+                    var dsi = ds[i].cssRules;
+                    for (var j = 0, dsil = dsi.length; j < dsil; ++j) {
+                        if (dsi[j].selectorText == name)
+                            return dsi[j];
+                    }
                 }
-                
-                function cssrules() {
-                    var rules = {}; var ds = document.styleSheets, dsl = ds.length;
-                    for (var i = 0; i < dsl; ++i) {
-                        var dsi = ds[i].cssRules, dsil = dsi.length;
-                        for (var j = 0; j < dsil; ++j) rules[dsi[j].selectorText] = dsi[j];
-                    }
-                    return rules;
-                };
-                
-                function css_getclass(name) {
-                    var ds = document.styleSheets;
-                    for (var i = 0, dsl = ds.length; i < dsl; ++i) {
-                        var dsi = ds[i].cssRules;
-                        for (var j = 0, dsil = dsi.length; j < dsil; ++j) {
-                            if (dsi[j].selectorText == name)
-                                return dsi[j];
-                        }
-                    }
-                    return null;
-                };
+                return null;
+            };
 
-                function randomizeArray(myArray) {
-                    var i = myArray.length;
-                    if (i == 0) return [];
-                    while (--i) {
-                        var j = Math.floor(Math.random() * (i + 1));
-                        var tempi = myArray[i];
-                        var tempj = myArray[j];
-                        myArray[i] = tempj;
-                        myArray[j] = tempi;
-                    }
-                    return myArray;
-                };
+            function randomizeArray(myArray) {
+                var i = myArray.length;
+                if (i == 0) return [];
+                while (--i) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var tempi = myArray[i];
+                    var tempj = myArray[j];
+                    myArray[i] = tempj;
+                    myArray[j] = tempi;
+                }
+                return myArray;
+            };
 
-                window.onload = function () {				
-                    // This is a bunch of 'adapt to resolution' crap. Works sometimes :)
-                    var w = document.getElementById('adiv').offsetWidth;
-                    var h = Math.round(w * 518 / 500);
-                    var winh = window.innerHeight;
+            window.onload = function () {				
+                // This is a bunch of 'adapt to resolution' crap. Works sometimes :)
+                var w = document.getElementById('adiv').offsetWidth;
+                var h = Math.round(w * 518 / 500);
+                var winh = window.innerHeight;
                     
-                    // Detect landscape view
-                    if (winh < h * 1.2) {
-                        w = Math.round(winh *0.8 * 500 / 518);
-                        h = Math.round(w * 518 / 500);
-                    }
+                // Detect landscape view
+                if (winh < h * 1.2) {
+                    w = Math.round(winh *0.8 * 500 / 518);
+                    h = Math.round(w * 518 / 500);
+                }
 
-                    console.log(w);
-                    r.style.width = w + 'px';
-                    r.style.height = h + 'px';
-                    // The cutoff is squared to avoid sqrt later
-                    cutoff = Math.pow(w * 30.0 / 500.0, 2);
-                    console.log('winh: ' + winh);
+                console.log(w);
+                r.style.width = w + 'px';
+                r.style.height = h + 'px';
+                // The cutoff is squared to avoid sqrt later
+                cutoff = Math.pow(w * 30.0 / 500.0, 2);
+                console.log('winh: ' + winh);
+                var circleSize = 12 * w / 500.0;
 
-                    // Scale the target locations to new resolution
-                    for (var t in targets) {
-                        targets[t].x *= w / 500.0;
-                        targets[t].y *= w / 500.0;
-                    }
+                // Scale the target locations to new resolution
+                for (var t in targets) {
+                    targets[t].x *= w / 500.0;
+                    targets[t].y *= w / 500.0;
 
-                    p.style.strokeWidth = Math.round(w / 50);
-                    txt.style.fontSize = Math.round(w / 10) + 'px';
-                    var txth = txt.offsetHeight;
+                    var circle = document.getElementById('glyphCircle' + t);
+                    circle.setAttribute('cx', targets[t].x);
+                    circle.setAttribute('cy', targets[t].y);
+                    circle.setAttribute('r', circleSize);
+                }
+
+                p.style.strokeWidth = Math.round(w / 50);
+                txt.style.fontSize = Math.round(w / 10) + 'px';
+                var txth = txt.offsetHeight;
                     
 
-                    var z = w * 0.128;
-                    var btnstyle = css_getclass('.btn').style;
-                    btnstyle.fontSize = Math.round(z / 3) + 'px';
-                    btnstyle.padding = Math.round(z / 3) + 'px';
-                    var btnh = document.getElementById('nextBtn').offsetHeight;
+                var z = w * 0.128;
+                var btnstyle = css_getclass('.btn').style;
+                btnstyle.fontSize = Math.round(z / 3) + 'px';
+                btnstyle.padding = Math.round(z / 3) + 'px';
+                var btnh = document.getElementById('nextBtn').offsetHeight;
 
-                    console.log('winh: ' + winh + ', btnh: ' + btnh + ', ' + ', txth: ' + txth);
-                    console.log('toth: ' + (btnh + txth + h));
-                    console.log('left: ' + (winh - (btnh + txth + h)));
+                console.log('winh: ' + winh + ', btnh: ' + btnh + ', ' + ', txth: ' + txth);
+                console.log('toth: ' + (btnh + txth + h));
+                console.log('left: ' + (winh - (btnh + txth + h)));
                     
-                    document.getElementById('spacer').style.height = (winh - (btnh + txth + h) - 30) + 'px';
+                document.getElementById('spacer').style.height = (winh - (btnh + txth + h) - 30) + 'px';
 
-                    // Build up the lessons buttons
-                    var lessonsDiv = document.getElementById('LessonsDiv');
-                    var aboutdiv = document.getElementById('aboutdiv');
-                    for (var l in lessons) {
-                        //var lessonNumber = l;
-                        var btn = document.createElement("div");
-                        btn.appendChild(document.createTextNode(lessons[l].name));
-                        btn.className = 'lbtn';
-                        btn.id = 'lessonButton' + l;
-                        //btn.onclick = function () { var lessonNumber = l; startLesson(lessonNumber); };
-                        btn.setAttribute('onClick', 'startLesson(' + l + ')');
+                // Build up the lessons buttons
+                var lessonsDiv = document.getElementById('LessonsDiv');
+                var aboutdiv = document.getElementById('aboutdiv');
+                for (var l in lessons) {
+                    //var lessonNumber = l;
+                    var btn = document.createElement("div");
+                    btn.appendChild(document.createTextNode(lessons[l].name));
+                    btn.className = 'lbtn';
+                    btn.id = 'lessonButton' + l;
+                    //btn.onclick = function () { var lessonNumber = l; startLesson(lessonNumber); };
+                    btn.setAttribute('onClick', 'startLesson(' + l + ')');
 
-                        //lessonsDiv.appendChild(btn);
-                        lessonsDiv.insertBefore(btn, aboutdiv);
-                        lessons[l].glyphs = [];
+                    //lessonsDiv.appendChild(btn);
+                    lessonsDiv.insertBefore(btn, aboutdiv);
+                    lessons[l].glyphs = [];
+                }
+                    
+                // Figure out shich strokes make up each glyph (e.g. 'f1t4' = from 1 to 4)
+                for (var g in glyphs) {
+                    glyphs[g].strokes = {};
+                    var lastt = glyphs[g].points[0];
+                    for (var i = 1; i < glyphs[g].points.length; i++) {
+                        var next = glyphs[g].points[i];
+                        // To avoid dupes always take lowest number fist
+                        glyphs[g].strokes['f' + Math.min(lastt, next) + 't' + Math.max(lastt, next)] = 1;
+                        lastt = next;
                     }
-                    
-                    // Figure out shich strokes make up each glyph (e.g. 'f1t4' = from 1 to 4)
-                    for (var g in glyphs) {
-                        glyphs[g].strokes = {};
-                        var lastt = glyphs[g].points[0];
-                        for (var i = 1; i < glyphs[g].points.length; i++) {
-                            var next = glyphs[g].points[i];
-                            // To avoid dupes always take lowest number fist
-                            glyphs[g].strokes['f' + Math.min(lastt, next) + 't' + Math.max(lastt, next)] = 1;
-                            lastt = next;
-                        }
-                        // Set glyph id
-                        glyphs[g].id = strokes2id(glyphs[g].strokes);
-                        glyphlookup[glyphs[g].id] = glyphs[g];
+                    // Set glyph id
+                    glyphs[g].id = strokes2id(glyphs[g].strokes);
+                    glyphlookup[glyphs[g].id] = glyphs[g];
                         
-                        // Add glyph to correct lesson
-                        for (l = 0; l < lessons.length; l++) {
-                            if (lessons[l].family == glyphs[g].family) {
-                                lessons[l].glyphs.push(glyphs[g]);
-                                break;
-                            }
-                        }
-
-                        //showList();
-                    }
-
-                    // Load old results (if any)
-                    results = window.localStorage.getObject('results') || {};
-                    settings = window.localStorage.getObject('settings') || {};  // An empty object means default settings
-                    
-
-                    // Google analytics
-                    (function(i, s, o, g, r, a, m) {
-                        i['GoogleAnalyticsObject'] = r;
-                        i[r] = i[r] || function() {
-                            (i[r].q = i[r].q || []).push(arguments)
-                        }, i[r].l = 1 * new Date();
-                        a = s.createElement(o),
-                        m = s.getElementsByTagName(o)[0];
-                        a.async = 1;
-                        a.src = g;
-                        m.parentNode.insertBefore(a, m)
-                    })(window, document, 'script', 'http://www.google-analytics.com/analytics.js', 'ga');
-                    ga('create', 'UA-48558197-1', 'jokedst.github.io');
-                    ga('send', 'pageview');
-                };
-                
-                function setMode(name) {
-                    document.getElementById('mainButtons').style.display = 'none';
-                    document.getElementById('glyphsvg').style.display = 'none';
-                    document.getElementById('spacer').style.display = 'none';
-                    document.getElementById('LessonsDiv').style.display = 'none';
-                    document.getElementById('menudiv').style.display = 'none';
-                    document.getElementById('glyphList').style.display = 'none';
-                    hideProgressBar();
-                    
-                    switch(name) {
-                        case 'draw':
-                            document.getElementById('mainButtons').style.display = '';
-                            document.getElementById('glyphsvg').style.display = '';
-                            document.getElementById('spacer').style.display = '';
+                    // Add glyph to correct lesson
+                    for (l = 0; l < lessons.length; l++) {
+                        if (lessons[l].family == glyphs[g].family) {
+                            lessons[l].glyphs.push(glyphs[g]);
                             break;
-                        case 'lessons':
-                            document.getElementById('LessonsDiv').style.display = '';
-                            break;
-                        case 'menu':
-                            document.getElementById('menudiv').style.display = '';
-                            break;
-                        case 'list':
-                            document.getElementById('glyphList').style.display = '';
-                            break;
-                    }
-                }
-                
-                function showMenu() {
-                    txt.textContent = 'MENU';
-                    setMode('menu');
-                }
-
-                function createGlyph(svgObject, points, x, y, scale, name) {
-                    if (typeof svgObject === 'string')
-                        svgObject = document.getElementById(svgObject);
-
-                    var group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                    group.setAttribute('stroke', '#8CEBCE');
-
-                    var frame = document.createElementNS("http://www.w3.org/2000/svg", 'polygon');
-                    frame.setAttribute('fill', 'url(#g1)');
-                    frame.setAttribute('stroke-width', '4');
-                    frame.setAttribute('points', '50,0 100,28.8675135 100,86.6025404 50,115.4700538 0,86.6025404 0,28.8675135');
-                    group.appendChild(frame);
-
-                    var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-                    path.setAttribute('fill', 'none');
-                    path.setAttribute('stroke-width', '5');
-
-                    var ret = 'M' + targ[points[0]].x + ',' + targ[points[0]].y;
-                    for (var i = 1; i < points.length; i++) {
-                        ret += ' L' + targ[points[i]].x + ',' + targ[points[i]].y;
-                    }
-                    path.setAttribute('d', ret);
-                    group.appendChild(path);
-                    
-                    var textSpan = document.createElementNS("http://www.w3.org/2000/svg", 'text');
-                    textSpan.appendChild(document.createTextNode(name));
-                    textSpan.setAttribute('x', '110');
-                    textSpan.setAttribute('y', '65');
-                    group.appendChild(textSpan);
-
-                    group.setAttribute('transform', 'translate(' + x + ',' + y + ')' + (scale ? ' scale(' + scale + ')' : ''));
-                    svgObject.appendChild(group);
-                }
-
-                var listDrawn = false;
-                function showList() {
-                    txt.textContent = 'GLYPHS';
-                    setMode('list');
-
-                    if (!listDrawn) {
-                        var svg = document.getElementById('listsvg');
-                        var size = Math.floor(window.innerWidth / 6);
-
-                        svg.style.height = Math.floor(glyphs.length * size * 0.95 + size);
-                        for (var g = 0; g < glyphs.length; g++) 
-                            createGlyph(svg, glyphs[g].points, Math.round(10+ + (g % 2) * size*0.55), Math.floor(5 + g*size*0.95), (size / 100), glyphs[g].name.join('/').toUpperCase());
-                        //svg.style.height = glyphs.length * 95 + 100;
-                        //for (var g = 0; g < glyphs.length; g++) 
-                        //    createGlyph(svg, glyphs[g].points, 10 + (g % 2) * 55, 5 + g * 95, 1, glyphs[g].name.join('/').toUpperCase());
-
-                        listDrawn = true;
-                    }
-                }
-
-                function showLessons() {
-                    txt.textContent = 'LESSONS';
-                    setMode('lessons');
-                    
-                    // Update achievements
-                    var oldBadges = document.getElementsByClassName('badge');
-                    for (var b = oldBadges.length; b > 0; b--) {
-                        var badge = oldBadges[b-1];
-                        badge.parentNode.removeChild(badge);
-                    }
-                    
-                    if (results && results.lesson) {
-                        for (var l = 0; l < lessons.length; l++) {
-                            var lesson = results.lesson[l];
-                            if (lesson && (lesson.flawless || lesson.completed)) {
-                                var goldbadges = Math.min(results.lesson[l].flawless || 0, 3);
-                                var blackbadges = Math.min(results.lesson[l].completed || 0, 3 - goldbadges);
-                                var badges = goldbadges + blackbadges;
-                                for (var i = 0; i < badges; i++) {
-                                    var ld = document.getElementById('lessonButton' + l);
-                                    var achive = document.createElement("div");
-                                    achive.className = 'badge' + (i >= goldbadges ? ' steel' : '');
-                                    ld.appendChild(achive);
-                                }
-                            }
                         }
                     }
                 }
 
-                function startLesson(l) {
-                    console.log('Starting lesson ' + l);
-                    currentLesson = l;
+                var hmirror = findTransformedGlyphs(mirrorHorizontalMatrix),
+                    vmirror = findTransformedGlyphs(mirrorVerticalMatrix),
+                    rmirror = findTransformedGlyphs(rotate90Matrix);
+                for (var m in hmirror) {
+                    (glyphlookup[m].mirrors || (glyphlookup[m].mirrors = {}))[hmirror[m]] = 1;
+                    (glyphlookup[hmirror[m]].mirrors || (glyphlookup[hmirror[m]].mirrors = {}))[m] = 1;
+                }
+                for (m in vmirror) {
+                    (glyphlookup[m].mirrors || (glyphlookup[m].mirrors = {}))[vmirror[m]] = 1;
+                    (glyphlookup[vmirror[m]].mirrors || (glyphlookup[vmirror[m]].mirrors = {}))[m] = 1;
+                }
+                for (m in rmirror) {
+                    (glyphlookup[m].mirrors || (glyphlookup[m].mirrors = {}))[rmirror[m]] = 1;
+                    (glyphlookup[rmirror[m]].mirrors || (glyphlookup[rmirror[m]].mirrors = {}))[m] = 1;
+                }
+
+                // Load old results (if any)
+                results = window.localStorage.getObject('results') || {};
+                settings = window.localStorage.getObject('settings') || {};  // An empty object means default settings
                     
+
+                // Google analytics
+                (function(i, s, o, g, r, a, m) {
+                    i['GoogleAnalyticsObject'] = r;
+                    i[r] = i[r] || function() {
+                        (i[r].q = i[r].q || []).push(arguments)
+                    }, i[r].l = 1 * new Date();
+                    a = s.createElement(o),
+                    m = s.getElementsByTagName(o)[0];
+                    a.async = 1;
+                    a.src = g;
+                    m.parentNode.insertBefore(a, m)
+                })(window, document, 'script', 'http://www.google-analytics.com/analytics.js', 'ga');
+                ga('create', 'UA-48558197-1', 'jokedst.github.io');
+                ga('send', 'pageview');
+                    
+                // DEBUG
+                //showList();
+            };
+                
+            function setMode(name) {
+                document.getElementById('mainButtons').style.display = 'none';
+                document.getElementById('glyphsvg').style.display = 'none';
+                document.getElementById('spacer').style.display = 'none';
+                document.getElementById('LessonsDiv').style.display = 'none';
+                document.getElementById('menudiv').style.display = 'none';
+                document.getElementById('glyphList').style.display = 'none'; 
+                document.getElementById('backbutton').style.display = 'none';
+                hideProgressBar();
+                    
+                switch(name) {
+                case 'draw':
                     document.getElementById('mainButtons').style.display = '';
                     document.getElementById('glyphsvg').style.display = '';
                     document.getElementById('spacer').style.display = '';
-                    document.getElementById('LessonsDiv').style.display = 'none';
-                    
-                    if (l == -1) {
-                        // Free play!
-                        document.getElementById('spacer').textContent = '';
-                        txt.textContent = 'UNKNOWN';
-                        hideProgressBar();
-                        return;
-                    }
-
-                    lesson = { glyphsleft: randomizeArray(lessons[l].glyphs.slice(0)), peeked: false, glyphCount: lessons[l].glyphs.length, flawless: true };
-
-                    document.getElementById('spacer').textContent = lessons[l].name.toUpperCase();
-                    setProgressBar(0);
-                    showNextGlyph();
+                    break;
+                case 'lessons':
+                    document.getElementById('LessonsDiv').style.display = '';
+                    break;
+                case 'menu':
+                    document.getElementById('menudiv').style.display = '';
+                    break;
+                case 'list':
+                    document.getElementById('glyphList').style.display = '';
+                    document.getElementById('backbutton').style.display = 'block';
+                    break;
                 }
-
-                function isTouchEvent(e) {
-                    return e.type.match(/^touch/);
-                }
+            }
                 
-                function _pointOnLine(line1, line2, pt) {
-                    var isValid = false;
+            function showMenu() {
+                txt.textContent = 'MENU';
+                setMode('menu');
+            }
 
-                    var ret = { x: 0, y: 0 };
+            function createGlyph(svgObject, points, x, y, scale, name) {
+                if (typeof svgObject === 'string')
+                    svgObject = document.getElementById(svgObject);
+
+                var group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                group.setAttribute('stroke', '#8CEBCE');
+
+                var frame = document.createElementNS("http://www.w3.org/2000/svg", 'polygon');
+                frame.setAttribute('fill', 'url(#g1)');
+                frame.setAttribute('stroke-width', '4');
+                frame.setAttribute('points', '50,0 100,28.8675135 100,86.6025404 50,115.4700538 0,86.6025404 0,28.8675135');
+                group.appendChild(frame);
+
+                var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke-width', '5');
+
+                var ret = 'M' + targ[points[0]].x + ',' + targ[points[0]].y;
+                for (var i = 1; i < points.length; i++) {
+                    ret += ' L' + targ[points[i]].x + ',' + targ[points[i]].y;
+                }
+                path.setAttribute('d', ret);
+                group.appendChild(path);
                     
-                    // handle straight lines specially
-                    if (line1.x == line2.x) {
-                        ret = { x: line1.x, y: pt.y };
-                    } else if (line1.y == line2.y) {
-                        ret = { x: pt.x, y: line1.y };
-                    } else {
-                        var u = ((pt.x - line1.x) * (line2.x - line1.x)) + ((pt.y - line1.y) * (line2.y - line1.y));
+                var textSpan = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+                textSpan.appendChild(document.createTextNode(name));
+                textSpan.setAttribute('x', '110');
+                textSpan.setAttribute('y', '65');
+                group.appendChild(textSpan);
 
-                        var udenom = Math.pow(line2.x - line1.x, 2) + Math.pow(line2.y - line1.y, 2);
+                group.setAttribute('transform', 'translate(' + x + ',' + y + ')' + (scale ? ' scale(' + scale + ')' : ''));
+                svgObject.appendChild(group);
+            }
 
-                        u /= udenom;
+            var listDrawn = false, lessonLookup;
+            function showList() {
+                txt.textContent = 'GLYPHS';
+                setMode('list');
 
-                        ret.x = line1.x + (u * (line2.x - line1.x));
-                        ret.y = line1.y + (u * (line2.y - line1.y));
+                if (!listDrawn) {
+                    resort('glyph');
+                    //var svg = document.getElementById('glyphListGroup');
+                    //var size = Math.floor(window.innerWidth / 6);
+
+                    //document.getElementById('listsvg').style.height = Math.floor(glyphs.length * size * 0.95 + size);
+                    //for (var g = 0; g < glyphs.length; g++) 
+                    //    createGlyph(svg, glyphs[g].points, Math.round(10+ + (g % 2) * size*0.55), Math.floor(5 + g*size*0.95), (size / 100), glyphs[g].name.join('/').toUpperCase());
+                    //svg.style.height = glyphs.length * 95 + 100;
+                    //for (var g = 0; g < glyphs.length; g++) 
+                    //    createGlyph(svg, glyphs[g].points, 10 + (g % 2) * 55, 5 + g * 95, 1, glyphs[g].name.join('/').toUpperCase());
+                    //svgRoot.appendChild(svg);
+
+                    listDrawn = true;
+                }
+            }
+                
+            function resort(type) {
+                console.log(type);
+                //var ids = glyphs.map(function (g) { return g.id; });
+                    
+                var svg = document.getElementById('glyphListGroup');
+                while (svg.lastChild) {
+                    svg.removeChild(svg.lastChild);
+                }
+                    
+                var size = Math.floor(window.innerWidth / 6);
+                    
+                switch (type) {
+                case 'lesson':
+                    if (!lessonLookup) {
+                        lessonLookup = {};
+                        for (var g in glyphs) {
+                            var group = (lessonLookup[glyphs[g].family] || (lessonLookup[glyphs[g].family] = []));
+                            group.push(glyphs[g]);
+                        }
                     }
-                    
-                    // if point is outside line segment, move to closest endpoint
-                    if (line1.x < line2.x) {
-                        if (ret.x < line1.x) {
-                            return { x: line1.x, y: line1.y };
-                        }
-                        if (ret.x > line2.x) {
-                            return { x: line2.x, y: line2.y };
-                        }
-                    } else if (line1.x > line2.x) {
-                        if (ret.x > line1.x) {
-                            return { x: line1.x, y: line1.y };
-                        }
-                        if (ret.x < line2.x) {
-                            return { x: line2.x, y: line2.y };
-                        }
-                    }
-                    if (line1.y < line2.y) {
-                        if (ret.y < line1.y) {
-                            return { x: line1.x, y: line1.y };
-                        }
-                        if (ret.y > line2.y) {
-                            return { x: line2.x, y: line2.y };
-                        }
-                    } else if (line1.y > line2.y) {
-                        if (ret.y > line1.y) {
-                            return { x: line1.x, y: line1.y };
-                        }
-                        if (ret.y < line2.y) {
-                            return { x: line2.x, y: line2.y };
+                            
+                    document.getElementById('listsvg').style.height = Math.floor(glyphs.length * size * 0.95 + size + lessons.length * size * 0.77);
+                    var thisy = 0;
+                    for (var l in lessons) {
+                        var textSpan = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+                        textSpan.appendChild(document.createTextNode(lessons[l].name));
+                        textSpan.setAttribute('x', '10');
+                        textSpan.setAttribute('y', Math.round(thisy + size * 0.6));
+                        svg.appendChild(textSpan);
+
+                        thisy += size * 0.77;
+                        for (var z in lessonLookup[lessons[l].family]) {
+                            var lg = lessonLookup[lessons[l].family][z];
+                            createGlyph(svg,
+                                lg.points,
+                                Math.round(10 + (z % 2) * size * 0.55),
+                                Math.floor(thisy),
+                                (size / 100),
+                                lg.name.join('/').toUpperCase()
+                            );
+                            thisy += size * 0.95;
                         }
                     }
+                            
+                            
+                    for (var g = 0; g < g2.length; g++)
+                        createGlyph(svg, g2[g].points, Math.round(10 + +(g % 2) * size * 0.55), Math.floor(5 + g * size * 0.95), (size / 100), g2[g].name.join('/').toUpperCase());
+
+                    break;
+                case 'name':
+                    // We add each glyph possibly several times, once for each name
+                    var g2 = [];
+                    for (var g in glyphs) {
+                        g2.push(glyphs[g]);
+                        for (var x = 1; x < glyphs[g].name.length; x++) {
+                            var fakeGlyph = { points: glyphs[g].points, name: glyphs[g].name.slice() };
+                            // Move this name to the front
+                            fakeGlyph.name.unshift(fakeGlyph.name.splice(x, 1)[0]);
+                            g2.push(fakeGlyph);
+                        }
+                    }
+
+                    g2.sort(function(a, b) {
+                        return a.name[0].localeCompare(b.name[0]);
+                    });
+                            
+
+                    document.getElementById('listsvg').style.height = Math.floor(g2.length * size * 0.95 + size);
+                    for (var g = 0; g < g2.length; g++)
+                        createGlyph(svg, g2[g].points, Math.round(10 + +(g % 2) * size * 0.55), Math.floor(5 + g * size * 0.95), (size / 100), g2[g].name.join('/').toUpperCase());
+                    break;
+                case 'glyph':
+                    var g2 = glyphs.slice().sort(function (a, b) {
+                        var c = Object.keys(a.strokes).length - Object.keys(b.strokes).length;
+                        if (c != 0) return c;
+
+                        // Put closed before unclosed glyphs
+                        var aclosed = a.points[0] == a.points[a.points.length - 1];
+                        var bclosed = b.points[0] == b.points[b.points.length - 1];
+                        if (aclosed != bclosed) return aclosed ? -1 : 1;
+
+                        // mirror images should be put next to each other, so sort by 'lowest mirror' id
+                        var aid = a.mirrors ? Object.keys(a.mirrors).concat(a.id).sort()[0] : a.id;
+                        var bid = b.mirrors ? Object.keys(b.mirrors).concat(b.id).sort()[0] : b.id;
+
+                        return aid.localeCompare(bid);
+                    });
+                    document.getElementById('listsvg').style.height = Math.floor(g2.length * size * 0.95 + size);
+                    for (var g = 0; g < g2.length; g++)
+                        createGlyph(svg, g2[g].points, Math.round(10 + +(g % 2) * size * 0.55), Math.floor(5 + g * size * 0.95), (size / 100), g2[g].name.join('/').toUpperCase());
+                    break;
+                default:
+                }
+            }
+
+            function showLessons() {
+                txt.textContent = 'LESSONS';
+                setMode('lessons');
                     
-                    return ret;
+                // Update achievements
+                var oldBadges = document.getElementsByClassName('badge');
+                for (var b = oldBadges.length; b > 0; b--) {
+                    var badge = oldBadges[b-1];
+                    badge.parentNode.removeChild(badge);
+                }
                     
-                    // This below if you want to send NULL if the point is outside the line
-                    //var minx, maxx, miny, maxy;
-                    //minx = Math.min(line1.x, line2.x);
-                    //maxx = Math.max(line1.x, line2.x);
-                    //miny = Math.min(line1.y, line2.y);
-                    //maxy = Math.max(line1.y, line2.y);
-                    //// if outside the segment, move inside
-                    //if (ret.x >= minx && ret.x <= maxx) {
-                    //    // TODO
-                    //}
-                    //isValid = (ret.x >= minx && ret.x <= maxx) && (ret.y >= miny && ret.y <= maxy);
-                    //return isValid ? ret : null;
+                if (results && results.lesson) {
+                    for (var l = 0; l < lessons.length; l++) {
+                        var lesson = results.lesson[l];
+                        if (lesson && (lesson.flawless || lesson.completed)) {
+                            var goldbadges = Math.min(results.lesson[l].flawless || 0, 3);
+                            var blackbadges = Math.min(results.lesson[l].completed || 0, 3 - goldbadges);
+                            var badges = goldbadges + blackbadges;
+                            for (var i = 0; i < badges; i++) {
+                                var ld = document.getElementById('lessonButton' + l);
+                                var achive = document.createElement("div");
+                                achive.className = 'badge' + (i >= goldbadges ? ' steel' : '');
+                                ld.appendChild(achive);
+                            }
+                        }
+                    }
+                }
+            }
+
+            function startLesson(l) {
+                console.log('Starting lesson ' + l);
+                currentLesson = l;
+                    
+                document.getElementById('mainButtons').style.display = '';
+                document.getElementById('glyphsvg').style.display = '';
+                document.getElementById('spacer').style.display = '';
+                document.getElementById('LessonsDiv').style.display = 'none';
+                    
+                if (l == -1) {
+                    // Free play!
+                    document.getElementById('spacer').textContent = '';
+                    txt.textContent = 'UNKNOWN';
+                    hideProgressBar();
+                    return;
                 }
 
-                function points2path(start, end, verbose) {
-                    if (verbose) console.log('p2p s:' + start + " e:" + end);
-                    if (start >= end) return 'M0,0';
-                    var ret = '', first = true;
-                    var lastp = { x: -1, y: -1 };
-                    for (var i = start; i < end; i++) {
+                lesson = { glyphsleft: randomizeArray(lessons[l].glyphs.slice(0)), peeked: false, glyphCount: lessons[l].glyphs.length, flawless: true };
 
-                        if (points[i] === undefined) {
-                            console.log('wtf? ' + start + ',' + end);
-                        }
+                document.getElementById('spacer').textContent = lessons[l].name.toUpperCase();
+                setProgressBar(0);
+                showNextGlyph();
+            }
 
-                        if (first)
-                            ret += 'M' + points[i].x + ',' + points[i].y + ' ';
-                        else {
-                            if (points[i].x != lastp.x || points[i].y != lastp.y)
-                                ret += 'L' + points[i].x + ',' + points[i].y + ' ';
-                        }
-                        lastp = points[i];
-                        first = false;
+            function isTouchEvent(e) {
+                return e.type.match(/^touch/);
+            }
+                
+            function _pointOnLine(line1, line2, pt) {
+                var isValid = false;
+
+                var ret = { x: 0, y: 0 };
+                    
+                // handle straight lines specially
+                if (line1.x == line2.x) {
+                    ret = { x: line1.x, y: pt.y };
+                } else if (line1.y == line2.y) {
+                    ret = { x: pt.x, y: line1.y };
+                } else {
+                    var u = ((pt.x - line1.x) * (line2.x - line1.x)) + ((pt.y - line1.y) * (line2.y - line1.y));
+
+                    var udenom = Math.pow(line2.x - line1.x, 2) + Math.pow(line2.y - line1.y, 2);
+
+                    u /= udenom;
+
+                    ret.x = line1.x + (u * (line2.x - line1.x));
+                    ret.y = line1.y + (u * (line2.y - line1.y));
+                }
+                    
+                // if point is outside line segment, move to closest endpoint
+                if (line1.x < line2.x) {
+                    if (ret.x < line1.x) {
+                        return { x: line1.x, y: line1.y };
                     }
-                    if (verbose) console.log(ret);
-                    return ret.length > 0 ? ret : 'M0,0';
+                    if (ret.x > line2.x) {
+                        return { x: line2.x, y: line2.y };
+                    }
+                } else if (line1.x > line2.x) {
+                    if (ret.x > line1.x) {
+                        return { x: line1.x, y: line1.y };
+                    }
+                    if (ret.x < line2.x) {
+                        return { x: line2.x, y: line2.y };
+                    }
+                }
+                if (line1.y < line2.y) {
+                    if (ret.y < line1.y) {
+                        return { x: line1.x, y: line1.y };
+                    }
+                    if (ret.y > line2.y) {
+                        return { x: line2.x, y: line2.y };
+                    }
+                } else if (line1.y > line2.y) {
+                    if (ret.y > line1.y) {
+                        return { x: line1.x, y: line1.y };
+                    }
+                    if (ret.y < line2.y) {
+                        return { x: line2.x, y: line2.y };
+                    }
+                }
+                    
+                return ret;
+                    
+                // This below if you want to send NULL if the point is outside the line
+                //var minx, maxx, miny, maxy;
+                //minx = Math.min(line1.x, line2.x);
+                //maxx = Math.max(line1.x, line2.x);
+                //miny = Math.min(line1.y, line2.y);
+                //maxy = Math.max(line1.y, line2.y);
+                //// if outside the segment, move inside
+                //if (ret.x >= minx && ret.x <= maxx) {
+                //    // TODO
+                //}
+                //isValid = (ret.x >= minx && ret.x <= maxx) && (ret.y >= miny && ret.y <= maxy);
+                //return isValid ? ret : null;
+            }
+
+            function points2path(start, end, verbose) {
+                if (verbose) console.log('p2p s:' + start + " e:" + end);
+                if (start >= end) return 'M0,0';
+                var ret = '', first = true;
+                var lastp = { x: -1, y: -1 };
+                for (var i = start; i < end; i++) {
+
+                    if (points[i] === undefined) {
+                        console.log('wtf? ' + start + ',' + end);
+                    }
+
+                    if (first)
+                        ret += 'M' + points[i].x + ',' + points[i].y + ' ';
+                    else {
+                        if (points[i].x != lastp.x || points[i].y != lastp.y)
+                            ret += 'L' + points[i].x + ',' + points[i].y + ' ';
+                    }
+                    lastp = points[i];
+                    first = false;
+                }
+                if (verbose) console.log(ret);
+                return ret.length > 0 ? ret : 'M0,0';
+            }
+
+            function getCoords(e, that) {
+                if (isTouchEvent(e)) {
+                    return { x: (e.targetTouches[0].pageX - r.offsetLeft), y: (e.targetTouches[0].pageY - r.offsetTop) };
+                    //return e.targetTouches[0].clientX + ',' + e.targetTouches[0].clientY;
+                }
+                //console.log(e.clientX + ',' + e.pageX + ',' + r.offsetLeft);
+                //console.log(e.clientY + ',' + e.pageY + ',' + that.offsetTop);
+                return { x: (e.pageX - r.offsetLeft), y: (e.pageY - r.offsetTop) };
+                //return (e.pageX - r.offsetLeft) + ',' + (e.pageY - r.offsetTop);
+                //return e.clientX + ',' + e.clientY;
+            }
+
+            function down(e) {
+                var point = getCoords(e);
+                points = [point];
+                strokes = {};
+                glyph = null;
+                lastTouchedTarget = -1;
+                drawnPath = 'M' + point.x + ',' + point.y + ' ';
+                p.setAttribute('stroke', obj2col(drawcolor));
+                p.setAttribute('d', points2path(0, points.length));
+                isDown = true;
+
+                // Hide all cicles
+                for (var t in targets) {
+                    document.getElementById('glyphCircle' + t).style.display = 'none';
                 }
 
-                function getCoords(e, that) {
-                    if (isTouchEvent(e)) {
-                        return { x: (e.targetTouches[0].pageX - r.offsetLeft), y: (e.targetTouches[0].pageY - r.offsetTop) };
-                        //return e.targetTouches[0].clientX + ',' + e.targetTouches[0].clientY;
-                    }
-                    //console.log(e.clientX + ',' + e.pageX + ',' + r.offsetLeft);
-                    //console.log(e.clientY + ',' + e.pageY + ',' + that.offsetTop);
-                    return { x: (e.pageX - r.offsetLeft), y: (e.pageY - r.offsetTop) };
-                    //return (e.pageX - r.offsetLeft) + ',' + (e.pageY - r.offsetTop);
-                    //return e.clientX + ',' + e.clientY;
-                }
+                if (isTouchEvent(e)) e.preventDefault();
+            }
 
-                function down(e) {
+            function move(e) {
+                if (isDown) {
                     var point = getCoords(e);
-                    points = [point];
-                    strokes = {};
-                    glyph = null;
-                    lastTouchedTarget = -1;
-                    drawnPath = 'M' + point.x + ',' + point.y + ' ';
-                    p.setAttribute('stroke', obj2col(drawcolor));
-                    p.setAttribute('d', points2path(0, points.length));
-                    isDown = true;
 
-                    if (isTouchEvent(e)) e.preventDefault();
+                    points.push(point);
+                    drawnPath += 'L' + point.x + ',' + point.y + ' ';
+                    //drawnPath += 'L' + getCoords(e, this) + ' ';
+                    //p.setAttribute('d', points2path(0, points.length));
+                    //console.log(drawnPath);
+                    p.setAttribute('d', drawnPath);
+
+                    // Is it on a new target? If so, vibrate.
+                    for (var t in targets) {
+                        if (Math.pow(targets[t].x - point.x, 2) + Math.pow(targets[t].y - point.y, 2) <= cutoff) {
+                            if (t != lastTouchedTarget) {
+                                lastTouchedTarget = t;
+                                if (vibrateOn && vibrate) {
+                                    navigator.vibrate([30]);
+                                }
+
+                                // Show a circle
+                                var circle = document.getElementById('glyphCircle' + t);
+                                circle.style.display = '';
+                            }
+                            break;
+                        }
+                    }
                 }
 
-                function move(e) {
-                    if (isDown) {
-                        var point = getCoords(e);
+                if (isTouchEvent(e))
+                    e.preventDefault();
+            }
 
-                        points.push(point);
-                        drawnPath += 'L' + point.x + ',' + point.y + ' ';
-                        //drawnPath += 'L' + getCoords(e, this) + ' ';
-                        //p.setAttribute('d', points2path(0, points.length));
-                        //console.log(drawnPath);
-                        p.setAttribute('d', drawnPath);
+            function up(e) {
+                if (!isDown) return;
+                isDown = false;
+                if (isTouchEvent(e))
+                    e.preventDefault();
 
-                        // Is it on a new target? If so, vibrate.
-                        if (vibrateOn && vibrate) {
-                            for (var t in targets) {
-                                if (Math.pow(targets[t].x - point.x, 2) + Math.pow(targets[t].y - point.y, 2) <= cutoff) {
-                                    if (t != lastTouchedTarget) {
-                                        lastTouchedTarget = t;
-                                        navigator.vibrate([30]);
-                                    }
-                                    break;
-                                }
-                            }
+                console.log("points.length = " + points.length);
+                var lastt = -1;
+                starti = 0;
+                for (var i = 0; i < points.length; i++) {
+                    // Find closest target for each point
+                    //console.log('i = ' + i);
+                    var best = cutoff + 1, bestindex = -1;
+                    for (var t in targets) {
+                        var dx = targets[t].x - points[i].x;
+                        var dy = targets[t].y - points[i].y;
+                        var dist2 = dx * dx + dy * dy;
+
+                        if (dist2 < best && dist2 <= cutoff) {
+                            best = dist2;
+                            bestindex = t;
                         }
                     }
-
-                    if (isTouchEvent(e))
-                        e.preventDefault();
+                    if (bestindex != -1) {
+                        // calculate vector to animate point along
+                        points[i].vx = targets[bestindex].x - points[i].x;
+                        points[i].vy = targets[bestindex].y - points[i].y;
+                        points[i].tx = targets[bestindex].x;
+                        points[i].ty = targets[bestindex].y;
+                        points[i].last = bestindex;
+                        points[i].closeby = bestindex;
+                        if (lastt != -1 && lastt != bestindex) {
+                            // Stroke between targets detected
+                            strokes['f' + Math.min(lastt, bestindex) + 't' + Math.max(lastt, bestindex)] = 1;
+                        }
+                        lastt = bestindex;
+                    } else if (lastt != -1) {
+                        points[i].last = lastt;
+                    } else {
+                        starti = i + 1;
+                    }
                 }
 
-                function up(e) {
-                    if (!isDown) return;
-                    isDown = false;
-                    if (isTouchEvent(e))
-                        e.preventDefault();
+                // Now do it backwards to find next valid point
+                stopi = points.length;
+                lastt = -1;
+                for (i = points.length - 1; i >= starti; i--) {
+                    //console.log('backtrack ' + i + ' of ' + points.length);
+                    if (points[i].closeby !== undefined) {
+                        lastt = points[i].closeby;
+                        points[i].next = lastt;
+                    } else if (lastt != -1) {
+                        points[i].next = lastt;
+                    } else {
+                        stopi = i;
+                    }
+                }
 
-                    console.log("points.length = " + points.length);
-                    var lastt = -1;
-                    starti = 0;
-                    for (var i = 0; i < points.length; i++) {
-                        // Find closest target for each point
-                        //console.log('i = ' + i);
-                        var best = cutoff + 1, bestindex = -1;
-                        for (var t in targets) {
-                            var dx = targets[t].x - points[i].x;
-                            var dy = targets[t].y - points[i].y;
-                            var dist2 = dx * dx + dy * dy;
-
-                            if (dist2 < best && dist2 <= cutoff) {
-                                best = dist2;
-                                bestindex = t;
-                            }
-                        }
-                        if (bestindex != -1) {
-                            // calculate vector to animate point along
-                            points[i].vx = targets[bestindex].x - points[i].x;
-                            points[i].vy = targets[bestindex].y - points[i].y;
-                            points[i].tx = targets[bestindex].x;
-                            points[i].ty = targets[bestindex].y;
-                            points[i].last = bestindex;
-                            points[i].closeby = bestindex;
-                            if (lastt != -1 && lastt != bestindex) {
-                                // Stroke between targets detected
-                                strokes['f' + Math.min(lastt, bestindex) + 't' + Math.max(lastt, bestindex)] = 1;
-                            }
-                            lastt = bestindex;
-                        } else if (lastt != -1) {
-                            points[i].last = lastt;
+                // Finally go through all (valid) points a last time to see where to interpolate them
+                for (i = starti; i < stopi; i++) {
+                    //console.log('p' + i + ':{close:' + points[i].closeby + ', next:' + points[i].next + ', last:' + points[i].last)
+                    if (points[i].closeby == undefined) {
+                        var target;
+                        if (points[i].last == points[i].next) {
+                            // This is on a loop back to the same point
+                            target = targets[points[i].last];
                         } else {
-                            starti = i + 1;
+                            target = _pointOnLine(targets[points[i].last], targets[points[i].next], points[i]);
+                            if (target === null) {
+                                //console.log(pp(targets[points[i].last]) + ', ' + pp(targets[points[i].next]) + ', ' + pp(points[i]));
+                                continue;
+                            }
                         }
-                    }
+                        //console.log('target found: ' + pp(target));
 
-                    // Now do it backwards to find next valid point
-                    stopi = points.length;
-                    lastt = -1;
-                    for (i = points.length - 1; i >= starti; i--) {
-                        //console.log('backtrack ' + i + ' of ' + points.length);
-                        if (points[i].closeby !== undefined) {
-                            lastt = points[i].closeby;
-                            points[i].next = lastt;
-                        } else if (lastt != -1) {
-                            points[i].next = lastt;
+                        points[i].vx = target.x - points[i].x;
+                        points[i].vy = target.y - points[i].y;
+                        points[i].tx = target.x;
+                        points[i].ty = target.y;
+                    }
+                }
+
+                // Store start position for each point
+                for (i = starti; i < stopi; i++) {
+                    points[i].ox = points[i].x;
+                    points[i].oy = points[i].y;
+                }
+
+                // Glyph detection
+                var id = strokes2id(strokes);
+                glyph = glyphlookup[id] ? glyphlookup[id] : null;
+
+                lesson.newCorrect = false;
+                if (glyph != null) {
+                    console.log('found ' + glyph.name[0]);
+                    if (currentLesson != -1 && lesson.glyphsleft.length > 0 && glyph.name[0] == lesson.glyphsleft[lesson.currentIndex].name[0]) {
+                        console.log('drew correctly!');
+                        txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
+
+                        var timeTaken = Date.now() - startedGlyph;
+                        console.log('it took ' + timeTaken + ' time');
+                        // DEBUG: Show time taken in UI
+                        document.getElementById('spacer').textContent = timeTaken + ' ms';
+                        if (!lesson.peeked) {
+                            // Update progress bar
+                            setProgressBar((lesson.glyphCount - lesson.glyphsleft.length + 1) * 100.0 / lesson.glyphCount);
                         } else {
-                            stopi = i;
-                        }
-                    }
-
-                    // Finally go through all (valid) points a last time to see where to interpolate them
-                    for (i = starti; i < stopi; i++) {
-                        //console.log('p' + i + ':{close:' + points[i].closeby + ', next:' + points[i].next + ', last:' + points[i].last)
-                        if (points[i].closeby == undefined) {
-                            var target;
-                            if (points[i].last == points[i].next) {
-                                // This is on a loop back to the same point
-                                target = targets[points[i].last];
-                            } else {
-                                target = _pointOnLine(targets[points[i].last], targets[points[i].next], points[i]);
-                                if (target === null) {
-                                    //console.log(pp(targets[points[i].last]) + ', ' + pp(targets[points[i].next]) + ', ' + pp(points[i]));
-                                    continue;
-                                }
-                            }
-                            //console.log('target found: ' + pp(target));
-
-                            points[i].vx = target.x - points[i].x;
-                            points[i].vy = target.y - points[i].y;
-                            points[i].tx = target.x;
-                            points[i].ty = target.y;
-                        }
-                    }
-
-                    // Store start position for each point
-                    for (i = starti; i < stopi; i++) {
-                        points[i].ox = points[i].x;
-                        points[i].oy = points[i].y;
-                    }
-
-                    // Glyph detection
-                    var id = strokes2id(strokes);
-                    glyph = glyphlookup[id] ? glyphlookup[id] : null;
-
-                    lesson.newCorrect = false;
-                    if (glyph != null) {
-                        console.log('found ' + glyph.name[0]);
-                        if (currentLesson != -1 && lesson.glyphsleft.length > 0 && glyph.name[0] == lesson.glyphsleft[lesson.currentIndex].name[0]) {
-                            console.log('drew correctly!');
-                            txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
-
-                            var timeTaken = Date.now() - startedGlyph;
-                            console.log('it took ' + timeTaken + ' time');
-                            // DEBUG: Show time taken in UI
-                            document.getElementById('spacer').textContent = timeTaken + ' ms';
-                            if (!lesson.peeked) {
-                                // Update progress bar
-                                setProgressBar((lesson.glyphCount - lesson.glyphsleft.length + 1) * 100.0 / lesson.glyphCount);
-                            } else {
-                                lesson.flawless = false;
-                            }
-                            if (!lesson.drewCorrect) {
-                                // They have not drawn the same again (after completing it)
-                                lesson.newCorrect = true;
-
-                                if (!settings.dontSaveResults) {
-                                    setScore(glyph.id, { peeked: lesson.peeked, tries: lesson.drewIncorrectCount, time: timeTaken, date: Date.now(), gaveup: false });
-                                }
-                            }
-                            lesson.drewCorrect = true;
-                        } else {
-                            var nameIndex = glyphsShown++ % glyph.name.length;
-                            txt.textContent = glyph.name[nameIndex].toUpperCase();
-                            lesson.drewIncorrectCount++;
                             lesson.flawless = false;
                         }
+                        if (!lesson.drewCorrect) {
+                            // They have not drawn the same again (after completing it)
+                            lesson.newCorrect = true;
+
+                            if (!settings.dontSaveResults) {
+                                setScore(glyph.id, { peeked: lesson.peeked, tries: lesson.drewIncorrectCount, time: timeTaken, date: Date.now(), gaveup: false });
+                            }
+                        }
+                        lesson.drewCorrect = true;
                     } else {
-                        txt.textContent = 'UNKNOWN';
+                        var nameIndex = glyphsShown++ % glyph.name.length;
+                        txt.textContent = glyph.name[nameIndex].toUpperCase();
                         lesson.drewIncorrectCount++;
                         lesson.flawless = false;
                     }
-
-                    startLoop();
+                } else {
+                    txt.textContent = 'UNKNOWN';
+                    lesson.drewIncorrectCount++;
+                    lesson.flawless = false;
                 }
 
-                function pp(p) {
-                    return '{x:' + p.x + ', y:' + p.y + '}';
-                }
+                startLoop();
+            }
+
+            function pp(p) {
+                return '{x:' + p.x + ', y:' + p.y + '}';
+            }
                 
-                function calculateScore(performance) {
-                    // Score goes to 100. IF the user never seen the glyph consider the score 0.
-                    var score = 100;
-                    // remove time taken, up to 10 seconds, -2 points per second
-                    score -= Math.min(Math.floor(performance.time / 500), 20);
-                    // if peeked or gave up, loose 60 points
-                    if (performance.peeked || performance.gaveup)
-                        score -= 60;
-                    // Failed attempts cost 10 points each, up to 4 attempts
-                    score -= Math.min(performance.tries * 10, 40);
-                    // if this is an old result, reduce score since it might been forgotten since then 
-                    // NOTE: for this to work the scores must be recalculated, e.g. on load from storage
-                    var daysAgo = Math.floor((Date.now() - performance.date) / (24 * 60 * 60 * 1000));
-                    score -= Math.min(daysAgo, 30);
-                    // Don't do negative scores
-                    return Math.min(0, score);
-                }
+            function calculateScore(performance) {
+                // Score goes to 100. IF the user never seen the glyph consider the score 0.
+                var score = 100;
+                // remove time taken, up to 10 seconds, -2 points per second
+                score -= Math.min(Math.floor(performance.time / 500), 20);
+                // if peeked or gave up, loose 60 points
+                if (performance.peeked || performance.gaveup)
+                    score -= 60;
+                // Failed attempts cost 10 points each, up to 4 attempts
+                score -= Math.min(performance.tries * 10, 40);
+                // if this is an old result, reduce score since it might been forgotten since then 
+                // NOTE: for this to work the scores must be recalculated, e.g. on load from storage
+                var daysAgo = Math.floor((Date.now() - performance.date) / (24 * 60 * 60 * 1000));
+                score -= Math.min(daysAgo, 30);
+                // Don't do negative scores
+                return Math.min(0, score);
+            }
                 
-                function setScore(glyphId, performance) {
-                    // Calculates and saves a score based on the user perfomance. This should be tweaked.
-                    // Calculate score
-                    performance.score = calculateScore(performance);
+            function setScore(glyphId, performance) {
+                // Calculates and saves a score based on the user perfomance. This should be tweaked.
+                // Calculate score
+                performance.score = calculateScore(performance);
                     
-                    // Update last 5 results for this glyph
-                    var glyphResults = getResultObject('glyph', glyphId);
-                    if (!glyphResults.last5) glyphResults.last5 = [];
-                    glyphResults.last5.push(performance);
-                    if (glyphResults.last5.length > 5) glyphResults.last5.shift();
+                // Update last 5 results for this glyph
+                var glyphResults = getResultObject('glyph', glyphId);
+                if (!glyphResults.last5) glyphResults.last5 = [];
+                glyphResults.last5.push(performance);
+                if (glyphResults.last5.length > 5) glyphResults.last5.shift();
                     
-                    // Update glyph average score
-                    var totalScore = 0;
-                    for (var i = 0; i < glyphResults.last5.length; i++) totalScore += glyphResults.last5[i].score;
-                    glyphlookup[glyphId].avgScore = totalScore / glyphResults.last5.length;
+                // Update glyph average score
+                var totalScore = 0;
+                for (var i = 0; i < glyphResults.last5.length; i++) totalScore += glyphResults.last5[i].score;
+                glyphlookup[glyphId].avgScore = totalScore / glyphResults.last5.length;
                     
-                    // Save
-                    window.localStorage.setObject('results', results);
-                }
+                // Save
+                window.localStorage.setObject('results', results);
+            }
                 
-                function showNextGlyph() {
-                    if (currentLesson == -1) {
-                        var index = glyphsShown % glyphs.length;
-                        glyph = glyphs[index];
-                        console.log('random glyph ' + index + ': ' + glyph);
-                        txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
-                    } else {
-                        if (lesson.currentIndex != undefined && !lesson.peeked && lesson.drewCorrect) {
-                            // Mark this glyph as done
-                            lesson.glyphsleft.splice(lesson.currentIndex, 1);
+            function showNextGlyph() {
+                if (currentLesson == -1) {
+                    var index = glyphsShown % glyphs.length;
+                    glyph = glyphs[index];
+                    console.log('random glyph ' + index + ': ' + glyph);
+                    txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
+                } else {
+                    if (lesson.currentIndex != undefined && !lesson.peeked && lesson.drewCorrect) {
+                        // Mark this glyph as done
+                        lesson.glyphsleft.splice(lesson.currentIndex, 1);
+                    }
+                    if (lesson.glyphsleft.length == 0) {
+                        if (txt.textContent == "LESSON DONE!" || txt.textContent == "DONE! FLAWLESS!") {
+                            // Start next lesson
+                            var nextLesson = (currentLesson + 1) % lessons.length;
+                            startLesson(nextLesson);
+                            return;
                         }
-                        if (lesson.glyphsleft.length == 0) {
-                            if (txt.textContent == "LESSON DONE!" || txt.textContent == "DONE! FLAWLESS!") {
-                                // Start next lesson
-                                var nextLesson = (currentLesson + 1) % lessons.length;
-                                startLesson(nextLesson);
-                                return;
-                            }
-                            var thisLessonResults = getResultObject('lesson', currentLesson);
-                            if (lesson.flawless) {
-                                txt.textContent = "DONE! FLAWLESS!";
-                                thisLessonResults.flawless = (thisLessonResults.flawless || 0) + 1;
-                            } else {
-                                txt.textContent = "LESSON DONE!";
-                                thisLessonResults.completed = (thisLessonResults.completed || 0) + 1;
-                            }
-                            if (!settings.dontSaveResults)
-                                window.localStorage.setObject('results', results);
-                            glyph = null;
+                        var thisLessonResults = getResultObject('lesson', currentLesson);
+                        if (lesson.flawless) {
+                            txt.textContent = "DONE! FLAWLESS!";
+                            thisLessonResults.flawless = (thisLessonResults.flawless || 0) + 1;
                         } else {
-                            // Only switch glyph if there is more than one left. 
-                            var left = lesson.glyphsleft.length;
-                            if (left != 1) {
-                                // Never repeat the same glyph
-                                var tempi = Math.floor((Math.random() * (lesson.glyphsleft.length-1)));
-                                if (tempi >= lesson.currentIndex) tempi++;
-                                lesson.currentIndex = tempi;
-                            } else lesson.currentIndex = 0;
-                            
-                            if (!lesson.drewCorrect && !settings.dontSaveResults && glyph != null) {
-                                // User gave up and clicked 'next'. Record bad score.
-                                setScore(glyph.id, { peeked: lesson.peeked, tries: lesson.drewIncorrectCount, time: (Date.now() - startedGlyph), date: Date.now(), gaveup: true });
-                            }
-                            
-                            glyph = lesson.glyphsleft[lesson.currentIndex];
-                            lesson.nameindex = Math.floor(Math.random() * glyph.name.length);
-                            txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
-                            lesson.peeked = false;
-                            lesson.drewCorrect = false;
-                            lesson.drewIncorrectCount = 0;
+                            txt.textContent = "LESSON DONE!";
+                            thisLessonResults.completed = (thisLessonResults.completed || 0) + 1;
                         }
-                    }
-
-                    if (settings.showOnNext) {
-                        points = [];
-                        for (var i = 0; i < glyph.points.length; i++) {
-                            points.push(targets[glyph.points[i]]);
-                        }
-                        p.setAttribute('d', points2path(0, points.length));
-                        lesson.peeked = true;
+                        if (!settings.dontSaveResults)
+                            window.localStorage.setObject('results', results);
+                        glyph = null;
                     } else {
-                        points = [];
-                        p.setAttribute('d', 'M0,0');
-                    }
-                    p.setAttribute('stroke', obj2col(okcolor));
-                    startedGlyph = Date.now();
-                }
-                
-                function showCurrentGlyph() {
-                    if (currentLesson != -1) {
-                        // When drawn wrong, show correct glyph
+                        // Only switch glyph if there is more than one left. 
+                        var left = lesson.glyphsleft.length;
+                        if (left != 1) {
+                            // Never repeat the same glyph
+                            var tempi = Math.floor((Math.random() * (lesson.glyphsleft.length-1)));
+                            if (tempi >= lesson.currentIndex) tempi++;
+                            lesson.currentIndex = tempi;
+                        } else lesson.currentIndex = 0;
+                            
+                        if (!lesson.drewCorrect && !settings.dontSaveResults && glyph != null) {
+                            // User gave up and clicked 'next'. Record bad score.
+                            setScore(glyph.id, { peeked: lesson.peeked, tries: lesson.drewIncorrectCount, time: (Date.now() - startedGlyph), date: Date.now(), gaveup: true });
+                        }
+                            
                         glyph = lesson.glyphsleft[lesson.currentIndex];
+                        lesson.nameindex = Math.floor(Math.random() * glyph.name.length);
                         txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
+                        lesson.peeked = false;
+                        lesson.drewCorrect = false;
+                        lesson.drewIncorrectCount = 0;
                     }
-                    if (!glyph) return;
-                    lesson.peeked = true;
-                    
-                    //txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
+                }
+
+                if (settings.showOnNext) {
                     points = [];
                     for (var i = 0; i < glyph.points.length; i++) {
                         points.push(targets[glyph.points[i]]);
                     }
                     p.setAttribute('d', points2path(0, points.length));
-                    p.setAttribute('stroke', obj2col(okcolor));
+                    lesson.peeked = true;
+                } else {
+                    points = [];
+                    p.setAttribute('d', 'M0,0');
                 }
+                p.setAttribute('stroke', obj2col(okcolor));
+                startedGlyph = Date.now();
+            }
+                
+            function showCurrentGlyph() {
+                if (currentLesson != -1) {
+                    // When drawn wrong, show correct glyph
+                    glyph = lesson.glyphsleft[lesson.currentIndex];
+                    txt.textContent = glyph.name[lesson.nameindex].toUpperCase();
+                }
+                if (!glyph) return;
+                lesson.peeked = true;
+                    
+                //txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
+                points = [];
+                for (var i = 0; i < glyph.points.length; i++) {
+                    points.push(targets[glyph.points[i]]);
+                }
+                p.setAttribute('d', points2path(0, points.length));
+                p.setAttribute('stroke', obj2col(okcolor));
+            }
 				
-				function textClick(){
-					if(glyph != null && glyph.name.length > 1){
-						txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
-					}
-				}
-
-                r.addEventListener('mousedown', down, false);
-                r.addEventListener('mousemove', move, false);
-                r.addEventListener('mouseup', up, false);
-                r.addEventListener('touchstart', down, false);
-                r.addEventListener('touchmove', move, false);
-                r.addEventListener('touchend', up, false);
-                r.addEventListener('mouseout', up, false);
-                
-                var cc = 0, starttime = 0, lasttime = 0;
-                var started = Date.now();
-                function startLoop() {
-                    cc = 0;
-                    starttime = lasttime = Date.now();
-                    started = Date.now();
-                    window.requestAnimationFrame(looper, true);
+            function textClick(){
+                if(glyph != null && glyph.name.length > 1){
+                    txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
                 }
+            }
 
-                var looptimeMs = 500.0;
-                function looper() {
-                    var current = Date.now(),
-                        delta = current - started,
-                        deltac = current - lasttime;
-                    //console.log("frame " + cc + ", date = " + data + ', st = ' + starttime);
-                    var dd = deltac / looptimeMs;
-                    var dc = delta / looptimeMs;
-                    if (dc > 1) dc = 1;
+            r.addEventListener('mousedown', down, false);
+            r.addEventListener('mousemove', move, false);
+            r.addEventListener('mouseup', up, false);
+            r.addEventListener('touchstart', down, false);
+            r.addEventListener('touchmove', move, false);
+            r.addEventListener('touchend', up, false);
+            r.addEventListener('mouseout', up, false);
+                
+            var cc = 0, starttime = 0, lasttime = 0;
+            var started = Date.now();
+            function startLoop() {
+                cc = 0;
+                starttime = lasttime = Date.now();
+                started = Date.now();
+                window.requestAnimationFrame(looper, true);
+            }
+
+            var looptimeMs = 500.0;
+            function looper() {
+                var current = Date.now(),
+                    delta = current - started,
+                    deltac = current - lasttime;
+                //console.log("frame " + cc + ", date = " + data + ', st = ' + starttime);
+                var dd = deltac / looptimeMs;
+                var dc = delta / looptimeMs;
+                if (dc > 1) dc = 1;
                     
-                    //console.log('delta: ' + delta + ', d2: ' + deltac + ', dd: '+dd + ', dc: '+dc);
+                //console.log('delta: ' + delta + ', d2: ' + deltac + ', dd: '+dd + ', dc: '+dc);
 
-                    if (delta >= looptimeMs) {
-                        for (var j = starti; j < stopi; j++) {
-                            points[j].x = points[j].tx;
-                            points[j].y = points[j].ty;
-                        }
-                        txt.style.backgroundColor = '';
-                        console.log('done looping for now');
+                if (delta >= looptimeMs) {
+                    for (var j = starti; j < stopi; j++) {
+                        points[j].x = points[j].tx;
+                        points[j].y = points[j].ty;
+                    }
+                    txt.style.backgroundColor = '';
+                    console.log('done looping for now');
                         
-                        if (!settings.pauseBetweenGlyphs && currentLesson != -1 && lesson.drewCorrect) {
-                            showNextGlyph();
-                            return;
-                        }
-                    } else {
-                        for (var i = starti; i < stopi; i++) {
-                            //points[i].x += points[i].vx * deltac;
-                            //points[i].y += points[i].vy * deltac;
-                            points[i].x += points[i].vx * dd;
-                            points[i].y += points[i].vy * dd;
-                        }
-                        window.requestAnimationFrame(looper);
+                    if (!settings.pauseBetweenGlyphs && currentLesson != -1 && lesson.drewCorrect) {
+                        showNextGlyph();
+                        return;
+                    }
+                } else {
+                    for (var i = starti; i < stopi; i++) {
+                        //points[i].x += points[i].vx * deltac;
+                        //points[i].y += points[i].vy * deltac;
+                        points[i].x += points[i].vx * dd;
+                        points[i].y += points[i].vy * dd;
+                    }
+                    window.requestAnimationFrame(looper);
                     
-                        if (currentLesson != -1) {
-                            var bounce = ((1 - (Math.cos(Math.PI * 2 * dc))) / 2);
-                                var bounceByte = Math.floor(bounce * 150);
-                            if (lesson.newCorrect) {
-                                txt.style.backgroundColor = obj2col({ r: 0, g: bounceByte, b: 0 });
-                            } else if (!lesson.drewCorrect) {
-                                txt.style.backgroundColor = obj2col({ r: bounceByte, g: 0, b: 0 });
-                            }
+                    if (currentLesson != -1) {
+                        var bounce = ((1 - (Math.cos(Math.PI * 2 * dc))) / 2);
+                        var bounceByte = Math.floor(bounce * 150);
+                        if (lesson.newCorrect) {
+                            txt.style.backgroundColor = obj2col({ r: 0, g: bounceByte, b: 0 });
+                        } else if (!lesson.drewCorrect) {
+                            txt.style.backgroundColor = obj2col({ r: bounceByte, g: 0, b: 0 });
                         }
                     }
+                }
                     
-                    var path = points2path(starti, stopi);
-                    var tocolor = glyph == null ? badcolor : okcolor;
-                    p.setAttribute('stroke', interpolateColor(drawcolor, tocolor, dc));
-                    p.setAttribute('d', path);
+                var path = points2path(starti, stopi);
+                var tocolor = glyph == null ? badcolor : okcolor;
+                p.setAttribute('stroke', interpolateColor(drawcolor, tocolor, dc));
+                p.setAttribute('d', path);
                     
-                    lasttime = current;
+                lasttime = current;
+            }
+
+            var idsSet = false;
+            function strokes2id(strokes) {
+                // A glyph id is just it's strokes - sorted and combined, e.g. f3t5f4t5 for 'less'
+                return Object.keys(strokes).sort().join('');
+            }
+
+            function setGlyphIds() {
+                if (idsSet) return;
+                // A glyph can be uniquely identified by it's strokes (sorted)
+                for (var g in glyphs) {
+                    //var id = Object.keys(glyphs[g].strokes).sort().join('');
+                    var id = strokes2id(glyphs[g].strokes);
+                    glyphs[g].id = id;
+                    glyphlookup[id] = glyphs[g];
                 }
+                idsSet = true;
+            }
 
-                var idsSet = false;
-                function strokes2id(strokes) {
-                    // A glyph id is just it's strokes - sorted and combined, e.g. f3t5f4t5 for 'less'
-                    return Object.keys(strokes).sort().join('');
+            // Attempt at more compact id - just the numbers, in hex. E.g. f8t10f9t10 -> 8a9a
+            function setGlyphId2s() {
+                // A glyph can be uniquely identified by it's strokes (sorted)
+                for (var g in glyphs) {
+                    var id2 = Object.keys(glyphs[g].strokes).map(function (s) { return (s.substring(1).split('t').map(function(num) { return parseInt(num, 10).toString(11); }).join('')); }).sort().join('');
+                    glyphs[g].id2 = id2;
+                    glyphlookup[id2] = glyphs[g];
                 }
+            }
 
-                function setGlyphIds() {
-                    if (idsSet) return;
-                    // A glyph can be uniquely identified by it's strokes (sorted)
-                    for (var g in glyphs) {
-                        //var id = Object.keys(glyphs[g].strokes).sort().join('');
-                        var id = strokes2id(glyphs[g].strokes);
-                        glyphs[g].id = id;
-                        glyphlookup[id] = glyphs[g];
-                    }
-                    idsSet = true;
-                }
+            // Splits a string into parts of length 'length'
+            function splitString(str, len) {
+                var parts = Math.ceil(str.length / len),
+                    ret = new Array(parts),
+                    offset = 0;
 
-                // Attempt at more compact id - just the numbers, in hex. E.g. f8t10f9t10 -> 8a9a
-                function setGlyphId2s() {
-                    // A glyph can be uniquely identified by it's strokes (sorted)
-                    for (var g in glyphs) {
-                        var id2 = Object.keys(glyphs[g].strokes).map(function (s) { return (s.substring(1).split('t').map(function(num) { return parseInt(num, 10).toString(11); }).join('')); }).sort().join('');
-                        glyphs[g].id2 = id2;
-                        glyphlookup[id2] = glyphs[g];
-                    }
-                }
+                for (var i = 0; i < parts; i++)
+                    ret[i] = str.substring(offset, offset += len);
 
-                // Splits a string into parts of length 'length'
-                function splitString(str, len) {
-                    var parts = Math.ceil(str.length / len),
-                        ret = new Array(parts),
-                        offset = 0;
+                return ret;
+            }
 
-                    for (var i = 0; i < parts; i++)
-                        ret[i] = str.substring(offset, offset += len);
-
-                    return ret;
-                }
-
-                // Transformation matrixes for finding related glyhs. Since the targets are one dimensional the matrixes are one dimensional vectors (aka arrays)
-                var mirrorVerticalMatrix = [0, 2, 1, 4, 3, 5, 7, 6, 9, 8, 10];
-                var mirrorHorizontalMatrix = [10, 8, 4, 6, 7, 5, 3, 4, 1, 2, 0];
-                var rotate90Matrix = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+            // Transformation matrixes for finding related glyhs. Since the targets are one dimensional the matrixes are one dimensional vectors (aka arrays)
+            var mirrorVerticalMatrix = [0, 2, 1, 4, 3, 5, 7, 6, 9, 8, 10];
+            var mirrorHorizontalMatrix = [10, 8, 4, 6, 7, 5, 3, 4, 1, 2, 0];
+            var rotate90Matrix = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
                 
-                function transformNode(node, matrix) {
-                    // Matrix multiplication in one dimension is easy!
-                    return matrix[node];
-                }
+            function transformNode(node, matrix) {
+                // Matrix multiplication in one dimension is easy!
+                return matrix[node];
+            }
                 
-                // usage: findTransformedGlyphs(mirrorHorizontalMatrix), findTransformedGlyphs(mirrorVerticalMatrix), findTransformedGlyphs(rotate90Matrix)
-                function findTransformedGlyphs(matrix) {
-                    setGlyphIds();
-                    var pairs = {};
-                    for (var g in glyphs) {
-                        var mirrorStrokes = {};
-                        for (var s in glyphs[g].strokes) {
-                            var nodes = s.substring(1).split('t').map(function (num) { return transformNode(parseInt(num, 10), matrix); });
-                            var mirrorStroke = 'f' + Math.min(nodes[0], nodes[1]) + 't' + Math.max(nodes[0], nodes[1]);
-                            mirrorStrokes[mirrorStroke] = 1;
-                        }
-                        var id = Object.keys(mirrorStrokes).sort().join('');
-                        if (id < glyphs[g].id && glyphlookup[id] != undefined) {
-                            console.log('found mirror: ' + glyphs[g].name[0] + ' ~= ' + glyphlookup[id].name[0]);
-                            pairs[id] = glyphs[g].id;
-                        }
+            // usage: findTransformedGlyphs(mirrorHorizontalMatrix), findTransformedGlyphs(mirrorVerticalMatrix), findTransformedGlyphs(rotate90Matrix)
+            function findTransformedGlyphs(matrix) {
+                setGlyphIds();
+                var pairs = {};
+                for (var g in glyphs) {
+                    var mirrorStrokes = {};
+                    for (var s in glyphs[g].strokes) {
+                        var nodes = s.substring(1).split('t').map(function (num) { return transformNode(parseInt(num, 10), matrix); });
+                        var mirrorStroke = 'f' + Math.min(nodes[0], nodes[1]) + 't' + Math.max(nodes[0], nodes[1]);
+                        mirrorStrokes[mirrorStroke] = 1;
                     }
-                    return pairs;
-                }
-                
-                function listGlyphIds() {
-                    for (var g in glyphs) {
-                        console.log('GlyphNames.Add("' + glyphs[g].id2 + '", "' + glyphs[g].name[0] + '");');
+                    var id = Object.keys(mirrorStrokes).sort().join('');
+                    if (id < glyphs[g].id && glyphlookup[id] != undefined) {
+                        //console.log('found mirror: ' + glyphs[g].name[0] + ' ~= ' + glyphlookup[id].name[0]);
+                        pairs[id] = glyphs[g].id;
                     }
                 }
+                return pairs;
+            }
                 
-                function getResultObject(section, index) {
-                    // Results are an empty object by default, if something is missing we create it when requested
-                    if (!results[section])
+            function listGlyphIds() {
+                for (var g in glyphs) {
+                    console.log('GlyphNames.Add("' + glyphs[g].id2 + '", "' + glyphs[g].name[0] + '");');
+                }
+            }
+                
+            function getResultObject(section, index) {
+                // Results are an empty object by default, if something is missing we create it when requested
+                if (!results[section])
                     switch(section) {
-                        case 'lesson': results[section] = []; break;
-                        case 'glyph': results[section] = {}; break;
+                    case 'lesson': results[section] = []; break;
+                    case 'glyph': results[section] = {}; break;
                     }
-                    var sectionResults = results[section];
-                    return sectionResults[index] || (sectionResults[index] = {});
-                }
+                var sectionResults = results[section];
+                return sectionResults[index] || (sectionResults[index] = {});
+            }
                 
-                // size: 45551
-                function DEBUGcreateFakeResults() {
-                    for (var l in lessons) {
-                        getResultObject('lesson', l).flawless = 2;
-                    }
-                    for (var g in glyphs) {
-                        for (var i = 0; i < 6;i++)
-                            setScore(glyphs[g].id, { p: 1, a: 5, t: 12345, d: Date.now(), g: 1 });
-                        //setScore(glyphs[g].id, { peeked: true, tries: 5, time: 12345, date: Date.now(), gaveup: true, score:90 });
-                    }
+            // size: 45551
+            function DEBUGcreateFakeResults() {
+                for (var l in lessons) {
+                    getResultObject('lesson', l).flawless = 2;
                 }
-            </script>
+                for (var g in glyphs) {
+                    for (var i = 0; i < 6;i++)
+                        setScore(glyphs[g].id, { p: 1, a: 5, t: 12345, d: Date.now(), g: 1 });
+                    //setScore(glyphs[g].id, { peeked: true, tries: 5, time: 12345, date: Date.now(), gaveup: true, score:90 });
+                }
+            }
+        </script>
     </body>
 </html>
