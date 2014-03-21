@@ -1341,7 +1341,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                         drag.moveGrid(dir);
                     }
                 },
-                down: function(e) {
+                down: function (e) {
+                    txt.textContent = 'down';
                     var point = getCoords(e, this.svg);
                     this.firstpoint = point;
                     //console.log('down ' + pp(point));
