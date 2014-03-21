@@ -1261,15 +1261,17 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 dragsvg = document.getElementById('glyphdragsvg'),
                 last;
             function dragUp(e) {
-                var point = getCoords(e, dragsvg);
+                drag.up(e);
+                //var point = getCoords(e, dragsvg);
             }
             
             function dragDown(e) {
-                txt.textContent = 'down';
-                var point = getCoords(e);
+                drag.down(e);
+                //txt.textContent = 'down';
+                //var point = getCoords(e);
 
-                isDown = true;
-                if (isTouchEvent(e)) e.preventDefault();
+                //isDown = true;
+                //if (isTouchEvent(e)) e.preventDefault();
             }
             
             function dragMove(e) {
@@ -1389,7 +1391,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     rootsvg.addEventListener('mouseup', this.up, false);
                     rootsvg.addEventListener('touchstart', dragDown, false);
                     //rootsvg.addEventListener('touchmove', this.move, false);
-                    rootsvg.addEventListener('touchend', this.up, false);
+                    rootsvg.addEventListener('touchend', dragUp, false);
                     rootsvg.addEventListener('mouseout', this.up, false);
                     this.firstrun = false;
                 },
