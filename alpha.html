@@ -116,23 +116,12 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 	        color: #6be7c5;
             font-family: sans-serif;
             font-size: 5vw;
-            /*float: right;*/
             position: absolute;
             right: 3px;
             padding: 0px 20px 0px 20px;
             display: none;
         }
 	</style>
-    <script> // google analytics
-        //(function (i, s, o, g, r, a, m) {
-        //    i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
-        //        (i[r].q = i[r].q || []).push(arguments)
-        //    }, i[r].l = 1 * new Date(); a = s.createElement(o),
-        //    m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
-        //})(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
-        //ga('create', 'UA-48558197-1', 'jokedst.github.io');
-        //ga('send', 'pageview');
-    </script>
 </head>
     <body>
         <div class="backbtn" onclick="showMenu()" id="backbutton">&lt;</div>
@@ -167,10 +156,11 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
         <div id="menudiv" style="display:none">
             <div class="lbtn" onclick="showLessons()" >Lessons</div>
             <div class="lbtn" onclick="showList()" >Glyph list</div>
+            <div class="lbtn" onclick="showDrag()" >Glyphs thingy</div>
+            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.05<br/>Feedback: <a href="mailto:jokedst+glyphs@gmail.com">jokedst+glyphs@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
         </div>
         <div id='LessonsDiv' style='display:none'>
             <div class="lbtn" onclick="startLesson(-1)" >No lesson - free play!</div>
-            <div class="text" id="aboutdiv"><br/>About:<br/>Version: 1.04<br/>Feedback: <a href="mailto:jokedst+glyphs@gmail.com">jokedst+glyphs@gmail.com</a><br/>Bugtracker <a href="https://github.com/jokedst/jokedst.github.io/issues">at github</a></div>
         </div>
         <div id="glyphList" style="display:none">
             <select class="bigselect" onchange="resort(this.value)">
@@ -187,6 +177,16 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 <g id="glyphListGroup"></g>
             </svg>
             <div class="btn" onclick="showMenu()" style="float: left;margin-left:0px">MENU</div>
+        </div>
+        <div id="glyphdragdiv" style="display: none" viewBox="0 0 500 500">
+            <svg id="glyphdragsvg" >
+                <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#427563"/>
+                    <stop offset="50%" stop-color="#31514A"/>
+                    <stop offset="100%" stop-color="#427563"/>
+                </linearGradient>
+                <g id="glyphdragcanvas" stroke="#8CEBCE"></g>
+            </svg>
         </div>
         <script>
             var r = document.getElementById('glyphsvg'),
@@ -338,7 +338,6 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 
                 // Build up the lessons buttons
                 var lessonsDiv = document.getElementById('LessonsDiv');
-                var aboutdiv = document.getElementById('aboutdiv');
                 for (var l in lessons) {
                     //var lessonNumber = l;
                     var btn = document.createElement("div");
@@ -348,8 +347,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     //btn.onclick = function () { var lessonNumber = l; startLesson(lessonNumber); };
                     btn.setAttribute('onClick', 'startLesson(' + l + ')');
 
-                    //lessonsDiv.appendChild(btn);
-                    lessonsDiv.insertBefore(btn, aboutdiv);
+                    lessonsDiv.appendChild(btn);
                     lessons[l].glyphs = [];
                 }
                     
@@ -414,6 +412,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     
                 // DEBUG
                 //showList();
+                showDrag();
             };
                 
             function setMode(name) {
@@ -422,8 +421,9 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 document.getElementById('spacer').style.display = 'none';
                 document.getElementById('LessonsDiv').style.display = 'none';
                 document.getElementById('menudiv').style.display = 'none';
-                document.getElementById('glyphList').style.display = 'none'; 
+                document.getElementById('glyphList').style.display = 'none';
                 document.getElementById('backbutton').style.display = 'none';
+                document.getElementById('glyphdragdiv').style.display = 'none';
                 hideProgressBar();
                     
                 switch(name) {
@@ -434,12 +434,17 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     break;
                 case 'lessons':
                     document.getElementById('LessonsDiv').style.display = '';
+                    document.getElementById('backbutton').style.display = 'block';
                     break;
                 case 'menu':
                     document.getElementById('menudiv').style.display = '';
                     break;
                 case 'list':
                     document.getElementById('glyphList').style.display = '';
+                    document.getElementById('backbutton').style.display = 'block';
+                    break;
+                case 'drag':
+                    document.getElementById('glyphdragdiv').style.display = '';
                     document.getElementById('backbutton').style.display = 'block';
                     break;
                 }
@@ -752,13 +757,14 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
             }
 
             function getCoords(e, that) {
+                var rel = that || r;
                 if (isTouchEvent(e)) {
-                    return { x: (e.targetTouches[0].pageX - r.offsetLeft), y: (e.targetTouches[0].pageY - r.offsetTop) };
+                    return { x: (e.targetTouches[0].pageX - rel.offsetLeft), y: (e.targetTouches[0].pageY - rel.offsetTop) };
                     //return e.targetTouches[0].clientX + ',' + e.targetTouches[0].clientY;
                 }
                 //console.log(e.clientX + ',' + e.pageX + ',' + r.offsetLeft);
                 //console.log(e.clientY + ',' + e.pageY + ',' + that.offsetTop);
-                return { x: (e.pageX - r.offsetLeft), y: (e.pageY - r.offsetTop) };
+                return { x: (e.pageX - rel.offsetLeft), y: (e.pageY - rel.offsetTop) };
                 //return (e.pageX - r.offsetLeft) + ',' + (e.pageY - r.offsetTop);
                 //return e.clientX + ',' + e.clientY;
             }
@@ -1247,6 +1253,283 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     for (var i = 0; i < 6;i++)
                         setScore(glyphs[g].id, { p: 1, a: 5, t: 12345, d: Date.now(), g: 1 });
                     //setScore(glyphs[g].id, { peeked: true, tries: 5, time: 12345, date: Date.now(), gaveup: true, score:90 });
+                }
+            }
+            
+            // Drag stuff below
+            var dragIsDown = false,
+                dragsvg = document.getElementById('glyphdragsvg'),
+                last;
+            function dragUp(e) {
+                drag.up(e);
+                //var point = getCoords(e, dragsvg);
+            }
+            
+            function dragDown(e) {
+                drag.down(e);
+                //txt.textContent = 'down';
+                //var point = getCoords(e);
+
+                //isDown = true;
+                //if (isTouchEvent(e)) e.preventDefault();
+            }
+            
+            function dragMove(e) {
+                if (isDown) {
+                    var point = getCoords(e);
+                }
+            }
+            
+            function addHexagon(svg, x, y) {
+                var frame = document.createElementNS("http://www.w3.org/2000/svg", 'polygon');
+                frame.setAttribute('fill', 'none');
+                frame.setAttribute('stroke-width', '1');
+                frame.setAttribute('points', '50,0 100,28.8675135 100,86.6025404 50,115.4700538 0,86.6025404 0,28.8675135');
+                frame.setAttribute('transform', 'translate(' + x + ',' + y + ')');
+                frame.setAttribute('pointer-events', 'none');
+                svg.appendChild(frame);
+            }
+
+            var drag = {
+                x: 5,
+                y: 5,
+                firstrun: true,
+                h: 87,
+                even: 1,
+                isDown: false,
+                svg: document.getElementById('glyphdragcanvas'),
+                firstpoint: null,
+                mmx: { l: { x: -2, y: 0 }, r: { x: 2, y: 0 }, ul: { x: -1, y: -1 }, ur: { x: 1, y: -1 }, dl: { x: -1, y: 1 }, dr: { x: 1, y: 1 } },
+                hexcount: 0,
+                doubleRowLength: 0,
+                up: function (e) {
+                    txt.textContent = 'up';
+                    if (isTouchEvent(e)) e.preventDefault();
+                    if (this.isDown) {
+                        this.isDown = false;
+                        var point = getCoords(e, this.svg);
+                        console.log('up ' + pp(point));
+                        txt.textContent=('up ' + pp(point));
+
+                        // detect direction
+                        var dir;
+                        var v = { x: point.x - this.firstpoint.x, y: point.y - this.firstpoint.y };
+                        //console.log('v ' + pp(v));
+
+                        // Special case - x zero
+                        if (v.x == 0) {
+                            if (v.y == 0) return; // No direction at all :(
+                            if (v.y > 0) dir = 'dr';
+                            else dir = 'ur';
+                        } else {
+                            if (Math.abs(v.y / v.x) < 0.8660254038) { // sqrt(3)/2
+                                if (v.x > 0) dir = 'r';
+                                else dir = 'l';
+                            } else {
+                                if (v.x > 0) {
+                                    if (v.y > 0) {
+                                        dir = 'dr';
+                                    } else {
+                                        dir = 'ur';
+                                    }
+                                } else {
+                                    if (v.y > 0) {
+                                        dir = 'dl';
+                                    } else {
+                                        dir = 'ul';
+                                    }
+                                }
+                            }
+                        }
+                        console.log('direction: ' + dir);
+                        alert('direction: ' + dir);
+                        drag.moveGrid(dir);
+                    }
+                },
+                down: function (e) {
+                    txt.textContent = 'down';
+                    var point = getCoords(e, this.svg);
+                    this.firstpoint = point;
+                    //console.log('down ' + pp(point));
+                    this.isDown = true;
+                    if (isTouchEvent(e)) e.preventDefault();
+                },
+                //move: function(e) {
+                //    if (this.isDown) {
+                //        var point = getCoords(e, this.svg);
+                //        //console.log('move ' + pp(point));
+                //    }
+                //    if (isTouchEvent(e)) e.preventDefault();
+                //},
+                init: function(newx, newy, neweven) {
+                    if (newx) this.x = newx;
+                    if (newy) this.y = newy;
+                    if (neweven !== undefined) this.even = neweven;
+                    this.hexcount = this.x * this.y - Math.floor(this.y / 2) * (1 - this.even);
+                    this.doubleRowLength = this.x * 2 + this.even - 1;
+                    console.log('Grid has ' + this.hexcount + ' hexagons');
+
+                    this.state = Array.apply(null, new Array(this.hexcount)).map(function () { return { v: 0, obj: null }; });
+
+                    var rootsvg = document.getElementById('glyphdragsvg');
+                    while (this.svg.hasChildNodes()) this.svg.removeChild(this.svg.firstChild);
+                    rootsvg.setAttribute('viewBox', '0 0 ' + (drag.x * 100 + drag.even * 50) + ' ' + (drag.y * drag.h));
+
+                    // Create the hex grid
+                    for (var y = 0; y < drag.y; y++) {
+                        for (var x = 0; x < drag.x - (y % 2 * (1 - drag.even)); x++) {
+                            if (drag.even == 2)
+                                addHexagon(this.svg, 50 + x * 100 - ((y % 2) * 50), y * drag.h);
+                            else
+                                addHexagon(this.svg, x * 100 + ((y % 2) * 50), y * drag.h);
+                        }
+                    }
+                    // Start with two random glyphs
+                    this.putRandomGlyph();
+                    this.putRandomGlyph();
+
+                    rootsvg.addEventListener('mousedown', this.down, false);
+                    //rootsvg.addEventListener('mousemove', this.move, false);
+                    rootsvg.addEventListener('mouseup', this.up, false);
+                    rootsvg.addEventListener('touchstart', dragDown, false);
+                    //rootsvg.addEventListener('touchmove', this.move, false);
+                    rootsvg.addEventListener('touchend', dragUp, false);
+                    rootsvg.addEventListener('mouseout', this.up, false);
+                    this.firstrun = false;
+                },
+                index2coord: function(index) {
+                    var y2 = Math.floor(index / this.doubleRowLength) * 2;
+                    var x2 = index % this.doubleRowLength;
+
+                    if (x2 >= this.x) {
+                        y2++;
+                        x2 = (x2 - this.x) * 2 + (this.even == 2 ? 0 : 1);
+                    } else {
+                        x2 = x2 * 2 + (this.even == 2 ? 1 : 0);
+                    }
+                    return { x: x2, y: y2 };
+                },
+                coord2index: function(x, y) {
+                    var x2 = Math.floor(x / 2) + (y % 2 == 1 ? this.x : 0);
+                    var y2 = Math.floor(y / 2);
+                    return x2 + y2 * this.doubleRowLength;
+                },
+                testc: function() {
+                    for (var i = 0; i < this.hexcount; i++) {
+                        var coord = this.index2coord(i);
+                        var chk = this.coord2index(coord.x, coord.y);
+                        if (chk != i)
+                            console.log('mismatch at index ' + i + ' - got ' + chk);
+                    }
+                },
+                putRandomGlyph: function() {
+                    var freeCells = 0;
+                    for (var i in this.state) if (this.state[i].v == 0) freeCells++;
+                    if (freeCells == 0) return false;
+                    var cell = Math.floor(Math.random() * freeCells);
+                    for (i in this.state)
+                        if (this.state[i].v == 0 && cell-- == 0) {
+                            var value = Math.floor((Math.random() * 6) / 4) + 1;
+                            this.state[i].v = value;
+                            console.log('put a ' + value + ' in cell ' + i);
+                            var coords = this.index2coord(i);
+
+                            var g = this.createGlyph([0, 5, 9], coords.x * 50, coords.y * drag.h);
+                            this.state[i].obj = g;
+                            this.svg.appendChild(g);
+
+                            return { cell: i, value: value };
+                        }
+                    return false;
+                },
+
+                createGlyph: function(points, x, y, scale) {
+                    var group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                    group.setAttribute('stroke', '#8CEBCE');
+
+                    var frame = document.createElementNS("http://www.w3.org/2000/svg", 'polygon');
+                    frame.setAttribute('fill', 'url(#g2)');
+                    frame.setAttribute('stroke-width', '4');
+                    frame.setAttribute('points', '50,0 100,28.8675135 100,86.6025404 50,115.4700538 0,86.6025404 0,28.8675135');
+                    group.appendChild(frame);
+
+                    var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke-width', '5');
+
+                    var ret = 'M' + targ[points[0]].x + ',' + targ[points[0]].y;
+                    for (var i = 1; i < points.length; i++) {
+                        ret += ' L' + targ[points[i]].x + ',' + targ[points[i]].y;
+                    }
+                    path.setAttribute('d', ret);
+                    group.appendChild(path);
+
+                    group.setAttribute('transform', 'translate(' + x + ',' + y + ')' + (scale ? ' scale(' + scale + ')' : ''));
+                    return group;
+                },
+                moveGrid: function (direction) {
+                    var v = this.mmx[direction];
+                    // If going right or any down must step backwards
+                    if (direction == 'r' || direction == 'dl' || direction == 'dr') {
+                        for (var i = this.hexcount - 1; i >= 0; i--) {
+                            this.moveToCell(i, v);
+                        }
+                    } else {
+                        // Step forward
+                        for (i = 0; i < this.hexcount; i++) {
+                            this.moveToCell(i, v);
+                        }
+                    }
+                },
+                moveToCell: function (i, v) {
+                    if (this.state[i].v == 0) {
+                        // This cell is empty, so we might move a glyph here
+                        var coord = this.index2coord(i);
+                        var x = coord.x, y = coord.y;
+                        while (true) {
+                            x -= v.x;
+                            y -= v.y;
+                            if (x < 0 || y < 0 || y >= this.y || x >= this.x*2 + (y % 2 == 1 ? this.even*2 - 2 : 0)) {
+                                break;
+                            }
+                            var newi = this.coord2index(x, y);
+                            //console.log('newi ' + i + ' - (' + x + ',' + y + ')');
+                            if (this.state[newi].v != 0) {
+                                // Found a glyph we can move
+                                console.log('can move from (' + x + ',' + y + ') to ' + pp(coord));
+
+                                var distance = Math.abs(x - coord.x) + Math.abs(y - coord.y);
+                                var maxdistance = Math.max(this.x + this.even - 1, this.y);
+                                var time = distance / maxdistance / 3;
+
+                                this.state[newi].obj.setAttribute('transform', 'translate(' + (coord.x * 50) + ',' + (coord.y * drag.h) + ')');
+                                //var anim = document.createElementNS("http://www.w3.org/2000/svg", 'animateTransform');
+                                //anim.setAttribute('attributeType', 'xml');
+                                //anim.setAttribute('attributeName', 'transform');
+                                //anim.setAttribute('type', 'translate');
+                                //anim.setAttribute('from', (x * 50) + ',' + (y * drag.h));
+                                //anim.setAttribute('to', (coord.x * 50) + ',' + (coord.y * drag.h));
+                                //anim.setAttribute('dur', time + 's');
+                                //anim.setAttribute('repeatCount', '1');
+                                //anim.setAttribute("fill", "freeze");
+                                //this.state[newi].obj.appendChild(anim);
+                                
+                                this.state[i] = this.state[newi];
+                                this.state[newi] = { v: 0, obj: null };
+                                //anim.beginElement();
+                                break;
+                            }
+                        }
+                    }
+                }
+            };
+            function showDrag() {
+                txt.textContent = 'DRAG\'EM';
+                setMode('drag');
+
+                if (drag.firstrun) {
+
+                    drag.init();
                 }
             }
         </script>
