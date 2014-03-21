@@ -1495,21 +1495,21 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                                 var maxdistance = Math.max(this.x + this.even - 1, this.y);
                                 var time = distance / maxdistance / 3;
 
-                                //this.state[newi].obj.setAttribute('transform', 'translate(' + (coord.x * 50) + ',' + (coord.y * drag.h) + ')');
-                                var anim = document.createElementNS("http://www.w3.org/2000/svg", 'animateTransform');
-                                anim.setAttribute('attributeType', 'xml');
-                                anim.setAttribute('attributeName', 'transform');
-                                anim.setAttribute('type', 'translate');
-                                anim.setAttribute('from', (x * 50) + ',' + (y * drag.h));
-                                anim.setAttribute('to', (coord.x * 50) + ',' + (coord.y * drag.h));
-                                anim.setAttribute('dur', time + 's');
-                                anim.setAttribute('repeatCount', '1');
-                                anim.setAttribute("fill", "freeze");
-
-                                this.state[newi].obj.appendChild(anim);
+                                this.state[newi].obj.setAttribute('transform', 'translate(' + (coord.x * 50) + ',' + (coord.y * drag.h) + ')');
+                                //var anim = document.createElementNS("http://www.w3.org/2000/svg", 'animateTransform');
+                                //anim.setAttribute('attributeType', 'xml');
+                                //anim.setAttribute('attributeName', 'transform');
+                                //anim.setAttribute('type', 'translate');
+                                //anim.setAttribute('from', (x * 50) + ',' + (y * drag.h));
+                                //anim.setAttribute('to', (coord.x * 50) + ',' + (coord.y * drag.h));
+                                //anim.setAttribute('dur', time + 's');
+                                //anim.setAttribute('repeatCount', '1');
+                                //anim.setAttribute("fill", "freeze");
+                                //this.state[newi].obj.appendChild(anim);
+                                
                                 this.state[i] = this.state[newi];
                                 this.state[newi] = { v: 0, obj: null };
-                                anim.beginElement();
+                                //anim.beginElement();
                                 break;
                             }
                         }
