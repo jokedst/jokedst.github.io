@@ -3,6 +3,8 @@
 // @name           My Star Links mod (IITC)
 // @category       Layer
 // @version        0.1.5
+// @updateURL      https://jokedst.github.io/StarLinks.js
+// @downloadURL    https://jokedst.github.io/StarLinks.js
 // @description    [jonatkins-2014-05-17-003202] Calculate how to link the portals to create a star! Enable from the layer chooser.
 // @include        https://www.ingress.com/intel*
 // @include        http://www.ingress.com/intel*
