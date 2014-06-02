@@ -2,9 +2,9 @@
 // @id             star-links-mod@star-mod
 // @name           My Star Links mod (IITC)
 // @category       Layer
-// @version        0.1.5.1
-// @updateURL      https://jokedst.github.io/StarLinks.js
-// @downloadURL    https://jokedst.github.io/StarLinks.js
+// @version        0.1.5.2
+// @updateURL      https://jokedst.github.io/StarLinks.user.js
+// @downloadURL    https://jokedst.github.io/StarLinks.user.js
 // @description    [jonatkins-2014-05-17-003202] Calculate how to link the portals to create a star! Enable from the layer chooser.
 // @include        https://www.ingress.com/intel*
 // @include        http://www.ingress.com/intel*
@@ -42,7 +42,7 @@ window.plugin.starLinks.mindepth = 0;
 window.plugin.starLinks.maxdepth = 1000;
 window.plugin.starLinks.locked = false;
 window.plugin.starLinks.hideOrigin = false;
-window.plugin.starLinks.keepExistingLinks = false;
+window.plugin.starLinks.keepExistingLinks = true;
 window.plugin.starLinks.keepExistingLinksFor = 'ENLIGHTENED';
 
 
@@ -72,10 +72,10 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
     
     // 
     if(window.plugin.drawTools){
-        $.each(window.plugin.drawTools.drawnItems._layers, function(name, layer){
+        $.each(window.plugin.drawTools.drawnItems._layers, function (name, layer) {
+            var poly = layer._latlngs;
         });
     }
-              
     
     var bounds = map.getBounds();
     $.each(window.portals, function(guid, portal) {
@@ -328,25 +328,17 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
 				newedge.exists = true;
 				edges.push(newedge);
             }
-            // Add link from start to all other reachable portals
-            /*for (var i = 1; i < points.length; ++i){
-                edges.push(new window.plugin.starLinks.Edge(points[i], points[0], 0, d, i, 0));
-            }*/
-        }else{
-            // Add link from start to all other portals
-			// Don't need to check for intersections - these can't intersect anyway
-           /*for (var i = 1; i < points.length; ++i){
-                edges.push(new window.plugin.starLinks.Edge(points[i], points[0], 0, d, i, 0));
-            }*/
         }
-        //edges.sort(function(a,b){return a.length - b.length;});
         
         for(var p=0;p<points.length;p++){points[p].tris = [];}        
         
         for (var i = 0; i < points.length; ++i){
             // Check which other locations I can link to
             for (var j = i+1; j < points.length; ++j) if(i != j) {
-                var newedge = {a:points[i], b:points[j]};
+                var newedge = { a: points[i], b: points[j] };
+
+                // We could optimize here on i=0 when keeplinks is off, since there can't be any intersections on that pass. Later...
+
                 //console.log('testing from '+i+' to ' + j);
                 // go through all edges
                 var intersected = false;
@@ -486,7 +478,7 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
 				weight: 1.5,
 				clickable: false,
 				smoothFactor: 10,
-				dashArray: [6, 4],
+				dashArray: [6, 4]
 			});
 	});
 
@@ -511,7 +503,7 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
     window.plugin.starLinks.edges = edges;
     window.plugin.starLinks.fields = triangles;
     window.plugin.starLinks.locations = locations;
-    window.plugin.starLinks.convexHull = convexHull;    
+    window.plugin.starLinks.convexHull = convexHull;
 };
 
 window.plugin.starLinks.Edge = function(a, b, depth, length, ia, ib) {
