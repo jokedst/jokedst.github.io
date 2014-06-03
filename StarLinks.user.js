@@ -2,7 +2,7 @@
 // @id             star-links-mod@star-mod
 // @name           Star Links mod (IITC)
 // @category       Layer
-// @version        0.1.5.9
+// @version        0.1.5.10
 // @updateURL      https://jokedst.github.io/StarLinks.user.js
 // @downloadURL    https://jokedst.github.io/StarLinks.user.js
 // @description    Calculate how to link the portals to create a star! Enable from the layer chooser.
@@ -573,9 +573,9 @@ window.plugin.starLinks.addLabel = function(guid, text) {
 
 window.plugin.starLinks.showOptions = function () {
     dialog({
-        html: 'Keep existing links: <input type="checkbox" onclick="window.plugin.starLinks.setOption(\'keepLinks\', this.checked)" ' + (window.plugin.starLinks.keepExistingLinks ? 'checked="checked"' : '') + ' /></br>' +
-              'Keep links for <select onchange="window.plugin.starLinks.setOption(\'keepLinksFor\', this.value)"><option value="ENLIGHTENED">Enl</option><option value="RESISTANCE">Res</option></select></br>' +
-              'Lock plan: <input type="checkbox" onclick="window.plugin.starLinks.setOption(\'lock\', this.checked)" ' + (window.plugin.starLinks.locked ? 'checked="checked"' : '') + ' />',
+        html: 'Keep existing links: <input type="checkbox" onclick="window.plugin.starLinks.setOption(\'keepExistingLinks\', this.checked)" ' + (window.plugin.starLinks.keepExistingLinks ? 'checked="checked"' : '') + ' /></br>' +
+              'Keep links for <select onchange="window.plugin.starLinks.setOption(\'keepExistingLinksFor\', this.value)"><option value="ENLIGHTENED" ' + (window.plugin.starLinks.keepExistingLinksFor == 'ENLIGHTENED' ? 'selected' : '') + '>Enl</option><option value="RESISTANCE"' + (window.plugin.starLinks.keepExistingLinksFor == 'RESISTANCE' ? 'selected' : '') + '>Res</option></select></br>' +
+              'Lock plan: <input type="checkbox" onclick="window.plugin.starLinks.setOption(\'locked\', this.checked)" ' + (window.plugin.starLinks.locked ? 'checked="checked"' : '') + ' />',
         title: 'Star Links Options'
     });
 }
@@ -583,8 +583,8 @@ window.plugin.starLinks.showOptions = function () {
 window.plugin.starLinks.setOption = function (name, value) {
     console.log('setting value "' + name + '" to "' + value + '"');
     switch (name) {
-        case 'keepLinks': window.plugin.starLinks.keepExistingLinks = value; break;
-        case 'keepLinksFor': window.plugin.starLinks.keepExistingLinksFor = value; break;
+        case 'keepExistingLinks': window.plugin.starLinks.keepExistingLinks = value; break;
+        case 'keepExistingLinksFor': window.plugin.starLinks.keepExistingLinksFor = value; break;
         case 'locked': window.plugin.starLinks.locked = value; break;
     }
     window.plugin.starLinks.updateLayer();
