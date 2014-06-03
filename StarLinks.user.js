@@ -2,7 +2,7 @@
 // @id             star-links-mod@star-mod
 // @name           My Star Links mod (IITC)
 // @category       Layer
-// @version        0.1.5.4
+// @version        0.1.5.5
 // @updateURL      https://jokedst.github.io/StarLinks.user.js
 // @downloadURL    https://jokedst.github.io/StarLinks.user.js
 // @description    [jonatkins-2014-05-17-003202] Calculate how to link the portals to create a star! Enable from the layer chooser.
@@ -74,8 +74,10 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
     var polys = [];
     if(window.plugin.drawTools){
         $.each(window.plugin.drawTools.drawnItems._layers, function (name, layer) {
-            var poly = layer._latlngs;
-            polys.push(poly);
+            if (layer instanceof L.Polygon) {
+                var poly = layer._latlngs;
+                polys.push(poly);
+            }
         });
     }
     
@@ -570,13 +572,17 @@ window.plugin.starLinks.addLabel = function(guid, text) {
 };
 
 window.plugin.starLinks.showOptions = function () {
-    var html = 'test</br><select><option>Enl</option><option>Res</option></select>';
+    var html = 'test</br>Keep links for <select onchange="window.plugin.starLinks.setOption(\'keepLinksFor\', this.value)"><option value="ENLIGHTENED">Enl</option><option value="RESISTANCE">Res</option></select>';
 
     dialog({
         html: html,
         //dialogClass: 'ui-dialog-drawtoolsSet',
         title: 'Star Links Options'
     });
+}
+
+window.plugin.starLinks.setOption = function (name, value) {
+    console.log('setting value "' + name + '" to "' + name + '"');
 }
 
 window.plugin.starLinks.setup = function() {
@@ -603,7 +609,10 @@ window.plugin.starLinks.setup = function() {
 
     // When somwthing has been drawn, update graph    
 	map.on('draw:created', function (e) {
-	    window.plugin.starLinks.updateLayer();
+        // Draw Tools hasn't necessarily added the layer yet, so let that trigger fire before doing the update (thus the setTimeout)
+	    setTimeout(function () {
+	        window.plugin.starLinks.updateLayer();
+	    }, 0);
 	});
 	map.on('draw:deleted', function (e) {
 	    window.plugin.starLinks.updateLayer();
