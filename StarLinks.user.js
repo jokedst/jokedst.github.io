@@ -569,6 +569,16 @@ window.plugin.starLinks.addLabel = function(guid, text) {
 	level.addTo(window.plugin.starLinks.linksLayerGroup);
 };
 
+window.plugin.starLinks.showOptions = function () {
+    var html = 'test</br><select><option>Enl</option><option>Res</option></select>';
+
+    dialog({
+        html: html,
+        //dialogClass: 'ui-dialog-drawtoolsSet',
+        title: 'Star Links Options'
+    });
+}
+
 window.plugin.starLinks.setup = function() {
 	window.plugin.starLinks.linksLayerGroup = new L.LayerGroup();
 	window.plugin.starLinks.fieldsLayerGroup = new L.LayerGroup();
@@ -590,6 +600,20 @@ window.plugin.starLinks.setup = function() {
 
 	window.addLayerGroup('Star links', window.plugin.starLinks.linksLayerGroup, false);
 	window.addLayerGroup('Star fields', window.plugin.starLinks.fieldsLayerGroup, false);
+
+    // When somwthing has been drawn, update graph    
+	map.on('draw:created', function (e) {
+	    window.plugin.starLinks.updateLayer();
+	});
+	map.on('draw:deleted', function (e) {
+	    window.plugin.starLinks.updateLayer();
+	});
+	map.on('draw:edited', function (e) {
+	    window.plugin.starLinks.updateLayer();
+	});
+
+    // Add options menu
+	$('#toolbox').append('<a onclick="window.plugin.starLinks.showOptions();return false;">StarLinks</a>');
 };
 var setup = window.plugin.starLinks.setup;
 
