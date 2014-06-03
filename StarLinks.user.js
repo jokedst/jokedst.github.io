@@ -70,10 +70,12 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
     
     var locations = [];
     
-    // 
+    // drawn polygons
+    var polys = [];
     if(window.plugin.drawTools){
         $.each(window.plugin.drawTools.drawnItems._layers, function (name, layer) {
             var poly = layer._latlngs;
+            polys.push(poly);
         });
     }
     
@@ -81,9 +83,20 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
     $.each(window.portals, function(guid, portal) {
         var ll = portal.getLatLng();
         if (bounds.contains(ll)) {
-            var p = map.project(portal.getLatLng(), window.plugin.starLinks.PROJECT_ZOOM);
-            p.guid = guid;
-            locations.push(p);
+
+            var inpoly = false;
+            for (var p = 0; p < polys.length; p++) {
+                if (isPointInPoly(polys[p], ll)) {
+                    inpoly = true;
+                    break;
+                }
+            }
+
+            if (polys.length == 0 || inpoly) {
+                var p = map.project(portal.getLatLng(), window.plugin.starLinks.PROJECT_ZOOM);
+                p.guid = guid;
+                locations.push(p);
+            }
         }
     });
     
@@ -240,8 +253,8 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
 			l = poly.length, 
 			j = l - 1;
         for(; ++i < l; j = i){
-			if(((poly[i].y <= pt.y && pt.y < poly[j].y) || (poly[j].y <= pt.y && pt.y < poly[i].y))
-            && (pt.x < (poly[j].x - poly[i].x) * (pt.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x))
+            if (((poly[i].lng <= pt.lng && pt.lng < poly[j].lng) || (poly[j].lng <= pt.lng && pt.lng < poly[i].lng))
+            && (pt.lat < (poly[j].lat - poly[i].lat) * (pt.lng - poly[i].lng) / (poly[j].lng - poly[i].lng) + poly[i].lat))
 				c = !c;
 		}
         return c;
