@@ -2,7 +2,7 @@
 // @id             star-links-mod@star-mod
 // @name           Star Links mod (IITC)
 // @category       Layer
-// @version        0.1.5.8
+// @version        0.1.5.9
 // @updateURL      https://jokedst.github.io/StarLinks.user.js
 // @downloadURL    https://jokedst.github.io/StarLinks.user.js
 // @description    Calculate how to link the portals to create a star! Enable from the layer chooser.
@@ -587,6 +587,7 @@ window.plugin.starLinks.setOption = function (name, value) {
         case 'keepLinksFor': window.plugin.starLinks.keepExistingLinksFor = value; break;
         case 'locked': window.plugin.starLinks.locked = value; break;
     }
+    window.plugin.starLinks.updateLayer();
 }
 
 window.plugin.starLinks.setup = function() {
