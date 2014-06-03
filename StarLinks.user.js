@@ -2,7 +2,7 @@
 // @id             star-links-mod@star-mod
 // @name           My Star Links mod (IITC)
 // @category       Layer
-// @version        0.1.5.6
+// @version        0.1.5.7
 // @updateURL      https://jokedst.github.io/StarLinks.user.js
 // @downloadURL    https://jokedst.github.io/StarLinks.user.js
 // @description    [jonatkins-2014-05-17-003202] Calculate how to link the portals to create a star! Enable from the layer chooser.
@@ -573,9 +573,9 @@ window.plugin.starLinks.addLabel = function(guid, text) {
 
 window.plugin.starLinks.showOptions = function () {
     dialog({
-        html: 'Keep existing links: <input type="checkbox" onchange="window.plugin.starLinks.setOption(\'keepLinks\', this.value)" /></br>' +
+        html: 'Keep existing links: <input type="checkbox" onclick="window.plugin.starLinks.setOption(\'keepLinks\', this.value)" /></br>' +
               'Keep links for <select onchange="window.plugin.starLinks.setOption(\'keepLinksFor\', this.value)"><option value="ENLIGHTENED">Enl</option><option value="RESISTANCE">Res</option></select></br>' +
-              'Lock plan: <input type="checkbox" onchange="window.plugin.starLinks.setOption(\'lock\', this.value)" />',
+              'Lock plan: <input type="checkbox" onclick="window.plugin.starLinks.setOption(\'lock\', this.value)" />',
         title: 'Star Links Options'
     });
 }
