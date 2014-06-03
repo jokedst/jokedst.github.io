@@ -2,7 +2,7 @@
 // @id             star-links-mod@star-mod
 // @name           Star Links mod (IITC)
 // @category       Layer
-// @version        0.1.5.10
+// @version        0.1.5.11
 // @updateURL      https://jokedst.github.io/StarLinks.user.js
 // @downloadURL    https://jokedst.github.io/StarLinks.user.js
 // @description    Calculate how to link the portals to create a star! Enable from the layer chooser.
@@ -44,6 +44,8 @@ window.plugin.starLinks.locked = false;
 window.plugin.starLinks.hideOrigin = false;
 window.plugin.starLinks.keepExistingLinks = true;
 window.plugin.starLinks.keepExistingLinksFor = 'ENLIGHTENED';
+
+window.plugin.starLinks.capLinksAt = 8;
 
 
 window.plugin.starLinks.linksLayerGroup = null;
@@ -349,7 +351,8 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
         
         for (var i = 0; i < points.length; ++i){
             // Check which other locations I can link to
-            for (var j = i+1; j < points.length; ++j) if(i != j) {
+            var foundLinks = 0;
+            for (var j = i + 1; j < points.length && window.plugin.starLinks.capLinksAt >= foundLinks; ++j) if (i != j) {
                 var newedge = { a: points[i], b: points[j] };
 
                 // We could optimize here on i=0 when keeplinks is off, since there can't be any intersections on that pass. Later...
@@ -362,7 +365,8 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
                     
                     // Check if it's the same edge, i.e. edge already exists
 					if((edge.ia == i && edge.ib == j) || (edge.ia == j && edge.ib == i)){
-						//console.log('--nope, has it already');
+					    //console.log('--nope, has it already');
+					    foundLinks++;
 						intersected = true;
 						break;
 					}
@@ -411,6 +415,7 @@ window.plugin.starLinks.updateLayer = function(starti, mindepth, maxdepth) {
 					}
 
 					edges.push(new window.plugin.starLinks.Edge(newedge.a, newedge.b, 0, 0, i, j));
+					foundLinks++;
 				}
 			}
 		}
