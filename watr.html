@@ -5,6 +5,7 @@
 	    body {
 	        background-color: #000;
             color:#8FF;
+            margin: 0;
 	    }
 
         .bigbutton {
@@ -38,7 +39,7 @@
         svg {
             background: linear-gradient(to bottom, #08757b 0%,#1f464a 20%,#1f464a 80%,#08757b 100%);
             width:100%;
-            height:300px;
+            height:100%;
         }
     </style>
     <script>
@@ -46,55 +47,226 @@
             boxh: 10,
             boxw: 10,
             svg: document.getElementById('mainsvg'),
+            boxes: [],
+            paths: ['', 'M 0 5 L 5 5', 'M 0 5 L 10 5', 'M 0 5 L 5 5 L 5 0', 'M 5 5 L 0 5 M 5 0 L 5 10', 'M 0 5 L 10 5 M 5 0 L 5 10'],
+            boxtypes: [],
             init: function() {               
-                this.svg = document.getElementById('mainsvg');
+                this.svg = document.getElementById('glyphdragcanvas');
+                this.boxtypes[00] = { p: 0, r: 0 };
+                this.boxtypes[01] = { p: 1, r: 90 };
+                this.boxtypes[02] = { p: 1, r: 0 };
+                this.boxtypes[03] = { p: 3, r: 0 };
+                this.boxtypes[04] = { p: 1, r: 270 };
+                this.boxtypes[05] = { p: 2, r: 90 };
+                this.boxtypes[06] = { p: 3, r: 270 };
+                this.boxtypes[07] = { p: 4, r: 0 };
+                this.boxtypes[08] = { p: 1, r: 180 };
+                this.boxtypes[09] = { p: 3, r: 90 };
+                this.boxtypes[10] = { p: 2, r: 0 };
+                this.boxtypes[11] = { p: 4, r: 90 };
+                this.boxtypes[12] = { p: 3, r: 180 };
+                this.boxtypes[13] = { p: 4, r: 180 };
+                this.boxtypes[14] = { p: 4, r: 270 };
+                this.boxtypes[15] = { p: 5, r: 0 };
+                this.lookup = [[0, 0, 0, 0], [2, 1, 8, 4], [10, 5, 10, 5], [3, 9, 12, 6], [15, 15, 15, 15]];
+                this.createMap(15, 15);
             },
-            createBox: function (x,y,scale) {
-                var group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                group.setAttribute('stroke', '#8CEBCE');
+            clickBox: function (e, button) {
+                console.log('clickBox ' + e + ', b=' + button);
+                var box = this.boxes[e];
+                if (button === 2) {
+                    if (box.locked) {
+                        box.locked = false;
+                        box.group.setAttribute('stroke', '#8CEBCE');
+                    } else {
+                        box.locked = true;
+                        box.group.setAttribute('stroke', '#EBCE8C');
+                    }
+                    return false;
+                } else if (!box.locked) {
+                    box.r = (box.r + 90) % 360;
+                    box.group.setAttribute('transform', ' translate(' + box.x + ',' + box.y + ') rotate(' + box.r + ' 5 5)');
+                }
+            },
+            createBox: function (i, x, y, rot) {
+                var box = {x:x, y:y, i:i, r:rot?rot:0};
+                box.group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                var t = this.boxes.push(box) - 1;
+                box.boxi = t;
+                box.group.setAttribute('stroke', '#8CEBCE');
+                box.group.setAttribute('onclick', 'pm.clickBox(' + t + ',1)');
+                box.group.setAttribute('oncontextmenu', 'pm.clickBox(' + t + ',2);return false;');
+                
 
-                var frame = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
-                frame.setAttribute('fill', 'url(#g2)');
-                frame.setAttribute('stroke-width', '4');
-                frame.setAttribute('points', '50,0 100,28.8675135 100,86.6025404 50,115.4700538 0,86.6025404 0,28.8675135');
-                frame.setAttribute('width', '10');
-                frame.setAttribute('height', '10');
-                group.appendChild(frame);
+                box.frame = document.createElementNS("http://www.w3.org/2000/svg", 'rect'); 
+                box.frame.setAttribute('fill', 'url(#g2)');
+                //box.frame.setAttribute('fill-opacity', '0');
+                box.frame.setAttribute('stroke-width', '0.5');
+                box.frame.setAttribute('points', '50,0 100,28.8675135 100,86.6025404 50,115.4700538 0,86.6025404 0,28.8675135');
+                box.frame.setAttribute('width', '10');
+                box.frame.setAttribute('height', '10');
+                box.frame.setAttribute('rx', '1');
+                box.frame.setAttribute('ry', '1');
+                box.group.appendChild(box.frame);
 
                 var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
                 path.setAttribute('fill', 'none');
                 path.setAttribute('stroke-width', '5');
-                /*
-                var ret = 'M' + targ[points[0]].x + ',' + targ[points[0]].y;
-                for (var i = 1; i < points.length; i++) {
-                    ret += ' L' + targ[points[i]].x + ',' + targ[points[i]].y;
-                }*/
-                ret = 'M 0 5 L 5 5 L 5 0';
-                path.setAttribute('d', ret);
-                group.appendChild(path);
+                path.setAttribute('stroke-linejoin', 'round');
+                path.setAttribute('stroke-linecap', 'round'); 
+                path.setAttribute('clip-path', "url(#clip1)");
 
-                group.setAttribute('transform', 'translate(' + x + ',' + y + ')' + (scale ? ' scale(' + scale + ')' : ''));
-                group.path = path;
-                return group;
+                path.setAttribute('d', this.paths[i]);
+                box.group.appendChild(path);
+
+                box.group.setAttribute('transform', 'translate(' + x + ',' + y + ') rotate(' + box.r + ' 5 5)');
+                box.group.path = path;
+                return box.group;
+            },
+            createGrid: function (x, y) {
+                for (var iy = 0; iy < y; iy++) {
+                    for (var ix = 0; ix < x; ix++) {
+                        var i = Math.floor(Math.random() * (this.paths.length - 1)) + 1;
+                        var r = Math.floor(Math.random() * 4) * 90;
+                        pm.svg.appendChild(pm.createBox(i, ix * this.boxw, iy * this.boxh, r));
+                    }
+                }
+            },
+            createMap: function (x, y) {
+                //var grid = Array.apply(null, new Array(x * y)).map(Number.prototype.valueOf, 0);
+
+                while (this.svg.hasChildNodes()) this.svg.removeChild(this.svg.firstChild);
+                document.getElementById('mainsvg').setAttribute('viewBox', '0 0 ' + (x * this.boxw) + ' ' + (y * this.boxh));
+
+                this.maze = this.createDepthFirstMaze(x, y);
+                for (var iy = 0; iy < y; iy++) {
+                    for (var ix = 0; ix < x; ix++) {
+                        var t = 0;
+                        if (iy > 0 && this.maze.verti[iy - 1][ix]) t |= 1;
+                        if (ix > 0 && this.maze.horiz[iy][ix - 1]) t |= 2;
+                        if (iy < y - 1 && this.maze.verti[iy][ix]) t |= 4;
+                        if (ix < x - 1 && this.maze.horiz[iy][ix]) t |= 8;
+                        var i = this.boxtypes[t];
+                        var r = Math.floor(Math.random() * 4) * 90;
+                        pm.svg.appendChild(pm.createBox(i.p, ix * this.boxw, iy * this.boxh, r));
+                    }
+                }
+            },
+            createDepthFirstMaze: function maze(x, y) {
+                var n = x * y - 1;
+                if (n < 0) { alert("illegal maze dimensions"); return; }
+                var horiz = []; for (var j = 0; j < x + 1; j++) horiz[j] = [],
+                    verti = []; for (var j = 0; j < y + 1; j++) verti[j] = [],
+                    here = [Math.floor(Math.random() * x), Math.floor(Math.random() * y)],
+                    path = [here],
+                    unvisited = [];
+                for (var j = 0; j < x + 2; j++) {
+                    unvisited[j] = [];
+                    for (var k = 0; k < y + 1; k++)
+                        unvisited[j].push(j > 0 && j < x + 1 && k > 0 && (j != here[0] + 1 || k != here[1] + 1));
+                }
+                while (0 < n) {
+                    var potential = [[here[0] + 1, here[1]], [here[0], here[1] + 1],
+                        [here[0] - 1, here[1]], [here[0], here[1] - 1]];
+                    var neighbors = [];
+                    for (var j = 0; j < 4; j++)
+                        if (unvisited[potential[j][0] + 1][potential[j][1] + 1])
+                            neighbors.push(potential[j]);
+                    if (neighbors.length) {
+                        n = n - 1;
+                        next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                        unvisited[next[0] + 1][next[1] + 1] = false;
+                        if (next[0] == here[0])
+                            horiz[next[0]][(next[1] + here[1] - 1) / 2] = true;
+                        else
+                            verti[(next[0] + here[0] - 1) / 2][next[1]] = true;
+                        path.push(here = next);
+                    } else
+                        here = path.pop();
+                }
+                return { x: x, y: y, horiz: horiz, verti: verti };
+            },
+            displayMaze: function (m) {
+                var text = [];
+                for (var j = 0; j < m.x * 2 + 1; j++) {
+                    var line = [];
+                    if (0 == j % 2)
+                        for (var k = 0; k < m.y * 4 + 1; k++)
+                            if (0 == k % 4)
+                                line[k] = '+';
+                            else
+                                if (j > 0 && m.verti[j / 2 - 1][Math.floor(k / 4)])
+                                    line[k] = ' ';
+                                else
+                                    line[k] = '-';
+                    else
+                        for (var k = 0; k < m.y * 4 + 1; k++)
+                            if (0 == k % 4)
+                                if (k > 0 && m.horiz[(j - 1) / 2][k / 4 - 1])
+                                    line[k] = ' ';
+                                else
+                                    line[k] = '|';
+                            else
+                                line[k] = ' ';
+                    //if (0 == j) line[1] = line[2] = line[3] = ' ';
+                    //if (m.x * 2 - 1 == j) line[4 * m.y] = ' ';
+                    text.push(line.join('') + '\r\n');
+                }
+                return text.join('');
             }
         };
         window.onload = function () {
             pm.init();
-            pm.svg.appendChild(pm.createBox(5, 5));
         };
+
+
+        function maze(x, y) {
+            var n = x * y - 1;
+            if (n < 0) { alert("illegal maze dimensions"); return; }
+            var horiz = []; for (var j = 0; j < x + 1; j++) horiz[j] = [],
+                verti = []; for (var j = 0; j < y + 1; j++) verti[j] = [],
+                here = [Math.floor(Math.random() * x), Math.floor(Math.random() * y)],
+                path = [here],
+                unvisited = [];
+            for (var j = 0; j < x + 2; j++) {
+                unvisited[j] = [];
+                for (var k = 0; k < y + 1; k++)
+                    unvisited[j].push(j > 0 && j < x + 1 && k > 0 && (j != here[0] + 1 || k != here[1] + 1));
+            }
+            while (0 < n) {
+                var potential = [[here[0] + 1, here[1]], [here[0], here[1] + 1],
+                    [here[0] - 1, here[1]], [here[0], here[1] - 1]];
+                var neighbors = [];
+                for (var j = 0; j < 4; j++)
+                    if (unvisited[potential[j][0] + 1][potential[j][1] + 1])
+                        neighbors.push(potential[j]);
+                if (neighbors.length) {
+                    n = n - 1;
+                    next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                    unvisited[next[0] + 1][next[1] + 1] = false;
+                    if (next[0] == here[0])
+                        horiz[next[0]][(next[1] + here[1] - 1) / 2] = true;
+                    else
+                        verti[(next[0] + here[0] - 1) / 2][next[1]] = true;
+                    path.push(here = next);
+                } else
+                    here = path.pop();
+            }
+            return { x: x, y: y, horiz: horiz, verti: verti };
+        }
     </script>
 </head>
-<body>
-    <img src="img/1100.png" />
-
-    
+<body>    
         <div id="svgcontainer">
-            <svg id="mainsvg" viewBox="0 0 100 100 ">
+            <svg id="mainsvg" viewBox="0 0 150 150 ">
                 <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0" stop-color="#427563"/>
                     <stop offset="50%" stop-color="#31514A"/>
                     <stop offset="100%" stop-color="#427563"/>
                 </linearGradient>
+                <clipPath id="clip1">
+                    <rect id="clipRect" width="10" height="10" />        
+                </clipPath>
                 <g id="glyphdragcanvas" stroke="#8CEBCE"></g>
             </svg>
         </div>
