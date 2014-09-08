@@ -775,12 +775,16 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 isDown = true;
 
                 // Hide all cicles
-                for (var t in targets) {
-                    document.getElementById('glyphCircle' + t).style.display = 'none';
-                }
+                hideCircles();
 
                 if (isTouchEvent(e)) e.preventDefault();
             }
+			
+			function hideCircles() {
+                for (var t in targets) {
+                    document.getElementById('glyphCircle' + t).style.display = 'none';
+                }
+			}
 
             function move(e) {
                 if (isDown) {
@@ -1054,6 +1058,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                     points = [];
                     p.setAttribute('d', 'M0,0');
                 }
+				hideCircles();
                 p.setAttribute('stroke', obj2col(okcolor));
                 startedGlyph = Date.now();
             }
@@ -1068,9 +1073,11 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
                 lesson.peeked = true;
                     
                 //txt.textContent = glyph.name[glyphsShown++ % glyph.name.length].toUpperCase();
+				hideCircles();
                 points = [];
                 for (var i = 0; i < glyph.points.length; i++) {
                     points.push(targets[glyph.points[i]]);
+					document.getElementById('glyphCircle' + glyph.points[i]).style.display = '';
                 }
                 p.setAttribute('d', points2path(0, points.length));
                 p.setAttribute('stroke', obj2col(okcolor));

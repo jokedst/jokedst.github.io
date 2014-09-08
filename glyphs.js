@@ -8,7 +8,7 @@ var glyphs = [
     { name: ["Simple"], points: [6, 7], family: "1_c1" },
     { name: ["Answer"], points: [3, 4, 7, 5], family: "2_c2" },
     { name: ["Complex"], points: [4, 3, 5, 6], family: "2_c2" },
-    { name: ["Imperfect"], points: [4,5,6,3,5], family: "2_c2" },
+    { name: ["Imperfect"], points: [5, 3, 6, 5, 4, 6], family: "2_c2" },
     { name: ["Lie"], points: [5, 4, 7, 5, 3, 6], family: "2_c2" },
     { name: ["Seek", "Search"], points: [5, 4, 3, 6, 7], family: "2_c2" },
     { name: ["Strong"], points: [3, 4, 7, 6, 3], family: "2_c2" },
