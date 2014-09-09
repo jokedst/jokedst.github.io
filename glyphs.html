@@ -753,7 +753,8 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 
             function getCoords(e, that) {
                 if (isTouchEvent(e)) {
-                    return { x: (e.targetTouches[0].pageX - r.offsetLeft), y: (e.targetTouches[0].pageY - r.offsetTop) };
+					return { x: (e.changedTouches[0].pageX - r.offsetLeft), y: (e.changedTouches[0].pageY - r.offsetTop) };
+                    //return { x: (e.targetTouches[0].pageX - r.offsetLeft), y: (e.targetTouches[0].pageY - r.offsetTop) };
                     //return e.targetTouches[0].clientX + ',' + e.targetTouches[0].clientY;
                 }
                 //console.log(e.clientX + ',' + e.pageX + ',' + r.offsetLeft);
