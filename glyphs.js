@@ -66,7 +66,7 @@ var glyphs = [
     { name: ["Want"], points: [8, 6, 10, 7], family: "8_sq1" },
     { name: ["Weak"], points: [1, 3, 4, 7], family: "8_sq1" },
     { name: ["Conflict"], points: [8, 3, 6, 7, 4, 9], family: "9_h" },
-    { name: ["Contract"], points: [7, 4, 9], family: "9_h" },
+    { name: ["Contract", "Reduce"], points: [7, 4, 9], family: "9_h" },
     { name: ["Courage"], points: [8, 3, 6, 7], family: "9_h" },
     { name: ["Fear"], points: [3, 4, 7, 2], family: "9_h" },
     { name: ["Government", "City", "Civilization", "Structure"], points: [1, 3, 6, 7, 4, 2], family: "9_h" },

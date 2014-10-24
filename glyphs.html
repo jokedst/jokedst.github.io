@@ -664,6 +664,7 @@ glyphs.sort(function(a,b){var c=a.family.localeCompare(b.family);if(c==0)c=a.nam
 				document.getElementById('spacer').textContent = lessons[l].name.toUpperCase();
 				setProgressBar(0);
 				showNextGlyph();
+				window.scroll(0,0);
 			}
 
 			function isTouchEvent(e) {
