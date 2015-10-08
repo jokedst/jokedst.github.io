@@ -1,0 +1,68 @@
+<html>
+<head><title>Scrabbler</title>
+
+    <script type="text/javascript" src="enable1.js">
+    
+    </script>
+
+    <script type="text/javascript">
+        console.log(enable1.length);
+
+        var typewatch = function () {
+            var timer = 0;
+            return function (callback, ms) {
+                clearTimeout(timer);
+                timer = setTimeout(callback, ms);
+            }
+        }();
+
+        function update() {
+            var chars = document.getElementById('chars').value;
+            console.log('new chars: ' + chars);
+            var important = chars.indexOf(' ') !== -1 ? chars.substring(0, chars.indexOf(' ')) : chars;
+            var regex = new RegExp("^[" + chars + "]+$");
+
+            var results = [];
+            for (var i in enable1) {
+                if (enable1.hasOwnProperty(i)) {
+                    var word = enable1[i];
+                    if (regex.test(word)) {
+                        var xp = chars;
+                        var importantChars = important;
+                        var ok = true;
+                        for (var c in word) if (word.hasOwnProperty(c)) {
+                            var ch = word[c];
+                            var index = xp.indexOf(ch);
+                            if (index === -1) {
+                                ok = false;
+                                break;
+                            }
+                            // Set to space or remove? I dunno what is faster
+                            xp = xp.replace(ch, ' ');
+
+                            if (importantChars.indexOf(ch) !== -1) {
+                                importantChars = importantChars.replace(ch, '');
+                            }
+                        }
+                        if (ok) {
+                            results.push({ text: word, score: importantChars.length });
+                        }
+                    }
+                }
+            }
+            results.sort((a,b) => (a.score === b.score ? b.text.length - a.text.length : a.score - b.score ));
+
+            var resultHtml = '';
+            for (var r in results) {
+                console.log(results[r].text + " " + results[r].score);
+                resultHtml += results[r].text + " " + results[r].score + '<br/>';
+            }
+            document.getElementById('resultDiv').innerHTML = resultHtml;
+        }
+    </script>
+</head>
+<body>
+    <input type="text" id="chars" oninput="typewatch(update, 500)" />
+    <div id="resultDiv"></div>
+</body>
+</html>
