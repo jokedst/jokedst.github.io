@@ -50,7 +50,7 @@
                     }
                 }
             }
-            results.sort((a,b) => (a.score === b.score ? b.text.length - a.text.length : a.score - b.score ));
+            results.sort(function (a, b) { return (a.score === b.score ? b.text.length - a.text.length : a.score - b.score); });
 
             var resultHtml = '';
             for (var r in results) {
