@@ -55,16 +55,22 @@
             var resultHtml = '';
             for (var r in results) {
                 console.log(results[r].text + " " + results[r].score);
-                resultHtml += results[r].text + " " + results[r].score + '<br/>';
+                resultHtml += results[r].text + " (" + results[r].score + '/' + results[r].text.length + ')<br/>';
             }
             document.getElementById('resultDiv').innerHTML = resultHtml;
         }
     </script>
     <style>
+        body {
+            background-color: #000;
+            color: #bdf;
+        }
         input {
             width: 100%;
             font-size:6vw;
 	        font-family: sans-serif;
+            background-color: #000;
+            color: #fff;
         }
 
         div {
