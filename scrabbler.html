@@ -17,7 +17,7 @@
         }();
 
         function update() {
-            var chars = document.getElementById('chars').value;
+            var chars = document.getElementById('chars').value.toLowerCase();
             console.log('new chars: ' + chars);
             var important = chars.indexOf(' ') !== -1 ? chars.substring(0, chars.indexOf(' ')) : chars;
             var regex = new RegExp("^[" + chars + "]+$");
