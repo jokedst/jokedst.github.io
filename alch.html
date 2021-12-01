@@ -194,12 +194,35 @@
 					reciepies.push(...Object.keys(pairs).map(k => createPotion(k)));
 					
 				reciepies.sort((a,b) => b.gold - a.gold);
-				console.log(reciepies);
+				
+				// Show recipies
+				let toShow = Math.min(reciepies.length, 30);
+				for(let i = 0; i < toShow; i++){
+					let recipie = reciepies[i];
+					let div = document.createElement("div");
+						div.className = "recipie-" + (recipie.isPotion ? 'potion' : 'poison');
+						div.innerHTML = "<div class='found-title'>" + recipie.name + " (" + recipie.gold + ")</div>" ;
+
+						for(let r = 0; r < recipie.ingredients.length; r++)
+						{
+							div.innerHTML += '<span class="unknown">' + recipie.ingredients[r] + '</span>';						
+						}
+						
+						div.innerHTML += "<br/>";
+						for(let r = 0; r < recipie.effects.length; r++)
+						{
+							div.innerHTML += '<span class="effect-'+(recipie.effects[r].isPotion ? 'potion' : 'poison')+'">' + recipie.effects[r].text + '</span>';						
+						}
+
+						rightdiv.appendChild(div)
+				}
+				
+				/*console.log(reciepies);
 				
 				console.log(pairs);
 				console.log(pairLookup);
 				console.log(triplets);
-				console.log('DONE');
+				console.log('DONE');*/
 			}
 			
 			// TODO: UI for setting these
@@ -311,6 +334,7 @@
 				})).sort((a, b) => b.gold - a.gold);
 				potion.gold = Math.floor(potion.gold);
 				potion.name = (potion.isPotion ? 'Potion' : 'Poison') + ' of ' + potion.majorEffect.effect;
+				potion.ingredients = ingredientList;
 				delete potion.majorEffect;
 				return potion;
 			}
@@ -360,9 +384,6 @@
 				makeNextCombos([], 0, comboLength);
 				return results;
 			}
-
-			const testarray = [1,5,9,11];
-			console.log(combinations(testarray,3));
 		</script>
 		<style type="text/css">
 		 	body{
@@ -386,7 +407,7 @@
 		 	}
 		 	.ingredient-div{
 		 		margin: 3px;
-
+				white-space: nowrap;
 		 	}
 		 	.ingredient-div input{
 		 		margin: 0px 2px;
@@ -409,6 +430,18 @@
 			    background-color: #172d99;
 			    color: #fff;
 		 	}
+		 	.recipie-poison{
+			    border-radius: 5px;
+			    line-height: 25px;
+			    background-color: #991732;
+			    color: #fff;
+		 	}
+		 	.recipie-potion{
+			    border-radius: 5px;
+			    line-height: 25px;
+			    background-color: #0a8000;
+			    color: #fff;
+		 	}
 
 		 	.known{
 		 		background-color: #fdd;
@@ -428,6 +461,13 @@
 		 		font-size: larger;
     			margin: 5px;
 		 	}
+			.effect-potion{
+				color: #bdfcc7;
+			}
+			.effect-poison{
+				color: #fab6b6;
+			}
+			
 		</style>
 	</head>
 	<body>
