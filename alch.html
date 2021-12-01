@@ -1,0 +1,247 @@
+<html>
+	<head>
+		<script type="text/javascript" src="alchemy.js"></script>
+		<script type="text/javascript">
+		 	var includedIngredients = {};
+		 	var ingrLookup = {};
+		 	var effectLookup = {};
+		 	var wantedEffects = {};
+
+		 	ingredients.sort((a,b)=>a.name.localeCompare(b.name));
+
+		 	for(let i=0;i<ingredients.length;i++){
+		 		ingrLookup[ingredients[i].name] = ingredients[i];
+		 		ingredients[i].effectsClean = ingredients[i].effects.map(x=>x.split('(')[0].trim());
+		 	}
+
+		 	function includeIngredient(label){
+		 		if(label.classList.contains('included'))
+		 			return;
+		 		label.classList.add('included');
+
+		 		let ingr = ingrLookup[label.innerText];
+				includedIngredients[label.innerText] = ingr;
+				for(let i=0;i<4;i++){
+					let effect = ingr.effectsClean[i];
+					if(!effectLookup.hasOwnProperty(effect))
+						effectLookup[effect] = {};
+					effectLookup[effect][ingr.name] = ingr;
+				}
+		 	}
+
+		 	function removeIngredient(label){
+		 		if(!label.classList.contains('included'))
+		 			return;
+				let checkboxControl = label.nextElementSibling;
+				for(let i=0;i<4;i++){
+					let effect = ingrLookup[label.innerText].effectsClean[i];
+					delete effectLookup[effect][label.innerText];
+
+					if(Object.keys(effectLookup[effect]).length == 0)
+						delete effectLookup[effect];
+						
+					if(checkboxControl.checked){
+						checkboxControl.checked = false;
+						chkClick(i,{currentTarget:checkboxControl});
+					}
+					checkboxControl = checkboxControl.nextElementSibling;
+				}
+				label.classList.remove('included');
+				delete includedIngredients[label.innerText];
+		 	}
+
+			function labelClick(t){
+				let included = this.classList.contains('included');
+				if(included)
+					removeIngredient(this);
+				else
+					includeIngredient(this);
+
+				calcRecipies();
+				//document.getElementById('debug').innerText = 'hej ' + this.innerText;
+			}
+
+			function chkClick(index,x){
+				let ingredientName = x.currentTarget.parentNode.firstElementChild.innerText;
+				let included = x.currentTarget.parentNode.firstElementChild.classList.contains('included');
+				if(!included) includeIngredient(x.currentTarget.parentNode.firstElementChild);
+
+				let effect = x.currentTarget.title;
+				if(x.currentTarget.checked){
+					if(!wantedEffects.hasOwnProperty(effect))
+						wantedEffects[effect] = {};
+					wantedEffects[effect][ingredientName] = 1;
+				}else{
+					delete wantedEffects[effect][ingredientName];
+					if(Object.keys(wantedEffects[effect]).length == 0)
+						delete wantedEffects[effect];
+				}
+
+				calcRecipies();
+				//console.log('clickety '+index + ': ' + x.currentTarget.title + ' on ' + ingredientName + ' -> ' + x.currentTarget.checked);
+			}
+
+			function calcRecipies(){
+				let rightdiv = document.getElementById('rightdiv');
+				while(rightdiv.firstChild && rightdiv.removeChild(rightdiv.firstChild));
+				
+				// List all wanted effects first (if any). Calc list first, then sort, then show.
+				const possibleWanted = []
+		
+
+				for(let wanted in wantedEffects){
+					if(Object.keys(effectLookup[wanted]).length > 1){
+						console.log(effectLookup[wanted]);
+						let wantedDiv = document.createElement("div");
+						wantedDiv.className = "wanted-effect";
+						wantedDiv.innerHTML = "<div class='found-title'>" + wanted + "</div>" ;
+
+						for(ingredient in wantedEffects[wanted])
+							wantedDiv.innerHTML += '<span class="unknown">' + ingredient + '</span>';
+						wantedDiv.innerHTML += "<br/>";
+						for(ingredient in effectLookup[wanted])
+							if(!wantedEffects[wanted].hasOwnProperty(ingredient))
+								wantedDiv.innerHTML += '<span class="known">' + ingredient + '</span>';
+
+						rightdiv.appendChild(wantedDiv);
+					}
+				}
+			}
+
+		 	window.onload = function(){
+		 		let leftdiv = document.getElementById('leftdiv');
+
+		 		for(let x=0;x < ingredients.length; x++){
+		 			let ingr = ingredients[x];
+			 		let elem = document.createElement("div");
+					elem.className = 'ingredient-div';
+
+					let label = document.createElement("span");
+					label.className = "ingredient-name";
+					label.innerHTML = ingr.name;
+					label.onclick = labelClick;
+					elem.appendChild(label);
+
+					for(let i=0;i<4;i++){
+						let chk = document.createElement("input");
+						let index = i;
+						chk.type = "checkbox";
+						chk.title = ingr.effectsClean[i];						
+						chk.onclick = x=>chkClick(index,x);
+
+						elem.appendChild(chk);
+					}
+
+					leftdiv.insertBefore(elem, null);
+				}
+		 	};
+
+			function combinations(sourceArray, comboLength) {
+				if (comboLength > sourceArray.length) return [];
+				const results = []; 
+
+				function makeNextCombos(workingCombo, currentIndex, remainingCount) {
+					for (let i = currentIndex; i < sourceArray.length; i++) {
+						const next = [...workingCombo, sourceArray[i]];
+						if (remainingCount == 1)
+							results.push(next);
+						else
+							makeNextCombos(next, i + 1, remainingCount - 1);
+					}
+				}
+
+				makeNextCombos([], 0, comboLength);
+				return results;
+			}
+
+			const testarray = [1,5,9,11];
+			console.log(combinations(testarray,3));
+		</script>
+		<style type="text/css">
+		 	body{
+		 		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+		 	}
+		 	.ingredient-name {
+			    vertical-align: text-top;
+			    cursor: pointer;
+			    margin: 2px 3px;
+
+		 		background-color: #e5e5e5;
+    			color: #000000;
+			    font-size: 11px;
+			    text-shadow: none;
+
+			    padding: 1px 4px 2px;
+			    border-radius: 3px;
+
+			    font-weight: bold;
+			    line-height: 14px;
+		 	}
+		 	.ingredient-div{
+		 		margin: 3px;
+
+		 	}
+		 	.ingredient-div input{
+		 		margin: 0px 2px;
+			    vertical-align: text-top;
+		 	}
+		 	.included {
+			    background-color: #3a87ad;
+			    color: #ffffff;
+		 	}
+		 	.container{
+		 		display: flex;
+		 	}
+		 	#leftdiv{
+		 	}
+		 	#rightdiv{
+		 	}
+		 	.wanted-effect{
+			    border-radius: 5px;
+			    line-height: 25px;
+			    background-color: #172d99;
+			    color: #fff;
+		 	}
+
+		 	.known{
+		 		background-color: #fdd;
+		 		margin: 3px;
+			    padding: 2px;
+			    border-radius: 5px;
+			    color: #000;
+		 	}
+		 	.unknown{
+		 		background-color: #dfd;
+		 	    margin: 3px;
+			    padding: 2px;
+			    border-radius: 5px;
+			    color: #000;
+		 	}
+		 	.found-title{
+		 		font-size: larger;
+    			margin: 5px;
+		 	}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div id="leftdiv">
+				<!--<div id="test" class="ingredient-div">
+					<span class="ingredient-name">This is name</span>
+					<input type="checkbox" /><input type="checkbox" /><input type="checkbox" /><input type="checkbox" />
+				</div>
+				<div id="test2" class="ingredient-div">
+					<span class="ingredient-name">This is another name</span>
+					<input type="checkbox" />
+					<input type="checkbox" />
+					<input type="checkbox" />
+					<input type="checkbox" />
+				</div>-->
+			</div>
+			<div id="rightdiv">
+				Meh
+			</div>
+		</div>
+		<div id="debug"></div>
+	</body>
+</html>
