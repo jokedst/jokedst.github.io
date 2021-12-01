@@ -7,11 +7,32 @@
 		 	var effectLookup = {};
 		 	var wantedEffects = {};
 
-		 	ingredients.sort((a,b)=>a.name.localeCompare(b.name));
+		 	ingredients.sort((a,b) => a.name.localeCompare(b.name));
 
+			// Parse the ingredients and put in lookups
 		 	for(let i=0;i<ingredients.length;i++){
 		 		ingrLookup[ingredients[i].name] = ingredients[i];
-		 		ingredients[i].effectsClean = ingredients[i].effects.map(x=>x.split('(')[0].trim());
+		 		ingredients[i].effectsClean = ingredients[i].effects.map(x => x.split('(')[0].trim());
+				ingredients[i].effect = {};
+				
+				// Parse the strange ingredient effects into structs
+				for(let j=0;j<4;j++){
+					let effect = ingredients[i].effects[j];
+					function getVal(regex) {
+						let result = regex.exec(effect);
+						return (result && result.length == 3) ? Number(result[2]) : 1;
+					}
+					
+					ingredients[i].effect[ingredients[i].effectsClean[j]] =  {
+						effect: ingredients[i].effectsClean[j], 
+						cost: ingredients[i].cost,
+						deltaDur: getVal(/(.*) \(([\.\d]+)dur\)/),
+						durDivider: getVal(/(.*) \(([\.\d]+)durdiv\)/),
+						magnitude: getVal(/(.*) \(([\.\d]+)×\)/),
+						magnitudeDivider: getVal(/(.*) \(([\.\d]+)×div\)/),
+						gold: getVal(/(.*) \(([\.\d]+)€\)/)
+					};
+				}
 		 	}
 
 		 	function includeIngredient(label){
@@ -81,13 +102,6 @@
 				//console.log('clickety '+index + ': ' + x.currentTarget.title + ' on ' + ingredientName + ' -> ' + x.currentTarget.checked);
 			}
 			
-			/*Object.prototype.get = function(property){
-				if(this.hasOwnProperty(property))
-					return property;
-				this[property] = {};
-				return this[property];
-			}*/
-			
 			function calcRecipies(){
 				let rightdiv = document.getElementById('rightdiv');
 				while(rightdiv.firstChild && rightdiv.removeChild(rightdiv.firstChild));
@@ -113,9 +127,7 @@
 						possible.push(wantedDiv);
 					}
 				}
-				possible.sort((a,b) => b.importance - a.importance);				
-				for(let i=0;i<possible.length;i++) rightdiv.appendChild(possible[i]);
-				//possible.forEach(x=>rightdiv.appendChild(x));
+				possible.sort((a,b) => b.importance - a.importance).forEach(x => rightdiv.appendChild(x));
 				
 				// Show most valuable recipies. There can be a lot of recipies. As in thousands. Hmm...
 				let recipyDiv = document.createElement("div");
@@ -145,9 +157,7 @@
 									// triplet(s) found! Make sure we haven't found it already though...
 									for(let third in pairLookup[effectPair[0]]){
 										let triplet = [...effectPair, third].sort();
-										//triplets.get(triplet)[effect] = 1;
 										triplets[triplet] = 1;
-										console.log('found triplet: '+triplet);
 									}
 								}
 								pairLookup[effectPair[0]][effectPair[1]] = 1;
@@ -157,9 +167,7 @@
 									// triplet(s) found! Make sure we haven't found it already though...
 									for(let third in pairLookup[effectPair[1]]){
 										let triplet = [...effectPair, third].sort();
-										//triplets.get(triplet)[effect] = 1;
 										triplets[triplet] = 1;
-										console.log('found triplet2: '+triplet);
 									}
 								}
 								pairLookup[effectPair[1]][effectPair[0]] = 1;								
@@ -168,10 +176,143 @@
 						}
 					}
 				}
+				
+				// Figure out all effects on a triplet
+				for(let tripletKey in triplets){
+					let triplet = tripletKey.split(',');
+					
+					// Get all effects of those three that occur at least twice
+					let activeEffects = triplet.flatMap(x=>ingrLookup[x].effectsClean).filter((v,i,s) => s.indexOf(v) < i).filter((v,i,s) => s.indexOf(v) === i);
+					triplets[triplet] = activeEffects;
+				}
+				
+				// Create potions of all recipies
+				let reciepies = Object.keys(triplets).map(k => createPotion(k));
+				
+				// Only bother with 2-ingredient stuff if we have < 50
+				if(reciepies.length < 50)
+					reciepies.push(...Object.keys(pairs).map(k => createPotion(k)));
+					
+				reciepies.sort((a,b) => b.gold - a.gold);
+				console.log(reciepies);
+				
 				console.log(pairs);
 				console.log(pairLookup);
 				console.log(triplets);
 				console.log('DONE');
+			}
+			
+			// TODO: UI for setting these
+			var skills = {Alchemy_Skill: 50, Fortify_Alchemy: 0, Alchemist_Perk: 40};
+			
+			// Ripped from gerralab more or less. Had to remove jQuery.
+			function createPotion(ingredientList){
+				if(typeof(ingredientList) === "string") ingredientList = ingredientList.split(',');
+				let effects = ingredientList.flatMap(x => ingrLookup[x].effectsClean) 	// get effects
+					.filter((v,i,s) => s.indexOf(v) < i)								// that occurs at least twice
+					.filter((v,i,s) => s.indexOf(v) === i);								// remove dupes
+					
+				//console.log('potion effects: ' + effects);
+				
+				let bestEffects = effects.map(e => ingredientList.map(i => ingrLookup[i].effect[e]).filter(x=>x).reduce((e1,e2) => e1.cost > e2.cost ? e1 : e2 ));
+				
+				//console.log(bestEffects);
+				let bestGold = 0, majorEffect = null;
+				
+				let potion = {gold:0};
+				
+				potion.effects = bestEffects.map(function(e){
+					let baseEffect = allEffects[e.effect];
+					
+					let effect = {...e, ...baseEffect};
+					
+					effect.defMag = e.magnitude * baseEffect.baseMagnitude / e.magnitudeDivider;
+					effect.defDur = baseEffect.baseDuration * e.deltaDur / e.durDivider;
+					effect.defGold = baseEffect.baseGold * e.gold; // (1 + (((effect.gold==1)?0:effect.gold)/100));// * effect.gold;
+					effect.calcMag = effect.defMag;
+					effect.calcDur = effect.defDur;
+					effect.calcGold = effect.defGold;
+					
+					effect.enMag = effect.defMag * (skills.Alchemy_Skill/5*0.1 + 4) * (1 + skills.Fortify_Alchemy/100) * (1 + skills.Alchemist_Perk/100);
+					effect.enDur = effect.defDur * (skills.Alchemy_Skill/5*0.1 + 4) * (1 + skills.Fortify_Alchemy/100) * (1 + skills.Alchemist_Perk/100);
+					if (!baseEffect.fixedMagnitude) {
+						effect.calcMag = Math.round(effect.enMag);
+					}
+					if (!baseEffect.fixedDuration) {
+						effect.calcDur = Math.round(effect.enDur);
+					}
+					if (effect.calcMag > 0 && effect.calcDur > 0) {
+						effect.calcGold = effect.calcGold * Math.pow(effect.calcMag, 1.1) * Math.pow(effect.calcDur/10, 1.1);
+					} else if (effect.calcMag > 0) {
+						effect.calcGold = effect.calcGold * Math.pow(effect.calcMag, 1.1);
+					} else if (effect.calcDur > 0) {
+						effect.calcGold = effect.calcGold * Math.pow(effect.calcDur/10, 1.1);
+					}
+					
+					if (effect.calcGold > bestGold) {
+						bestGold = effect.calcGold;
+						potion.majorEffect = effect;
+					}
+					
+					return effect;
+				});
+				potion.isPotion = potion.majorEffect.isPotion;
+				if(skills.Purity_Perk)
+					potion.effects = potion.effects.filter(e => e.isPotion == potion.isPotion);
+				
+				// Second pass now that we might have filtered some out
+				for(let ei = 0; ei < potion.effects.length; ei++){
+					let effect = potion.effects[ei];
+					    effect.calcGold = effect.defGold;
+						if (
+							(skills.Physician_Perk && (
+								effect.effect=='Restore Health' || effect.effect=='Restore Magicka' || effect.effect=='Restore Stamina' //||
+								/*effect.effect=='Regenerate Health' || effect.effect=='Regenerate Magicka' || effect.effect=='Regenerate Stamina'*/
+								))
+							) {
+							effect.enMag = effect.enMag * (1 + 25/100);
+							effect.enDur = effect.enDur * (1 + 25/100);
+						}
+						if ( (skills.Benefactor_Perk && effect.isPotion && potion.isPotion && effect.effect != "Resist Poison") || (skills.Poisoner_Perk && !effect.isPotion && !potion.isPotion && effect.effect != "Fear" && effect.effect != "Frenzy")) {
+							effect.enMag = effect.enMag * (1 + 25/100);
+							effect.enDur = effect.enDur * (1 + 25/100);
+						}
+					
+						if (!effect.fixedMagnitude) {
+							effect.calcMag = Math.round(effect.enMag);
+						}
+						if (!effect.fixedDuration) {
+							effect.calcDur = Math.round(effect.enDur);
+						}
+					
+						if (effect.calcMag > 0 && effect.calcDur > 0) {
+							effect.calcGold = effect.calcGold * Math.pow(effect.calcMag, 1.1) * Math.pow(effect.calcDur/10, 1.1);
+						} else if (effect.calcMag > 0) {
+							effect.calcGold = effect.calcGold * Math.pow(effect.calcMag, 1.1);
+						} else if (effect.calcDur > 0) {
+							effect.calcGold = effect.calcGold * Math.pow(effect.calcDur/10, 1.1);
+						}
+					
+						if (!effect.fixedMagnitude) {
+							effect.calcMag = Math.round(effect.enMag);
+						}
+						if (!effect.fixedDuration) {
+							effect.calcDur = Math.round(effect.enDur);
+						}
+					
+						effect.text = effect.description.replace('<mag>',effect.calcMag).replace('<dur>',effect.calcDur);
+						potion.gold += effect.calcGold;
+				}
+				potion.effects = potion.effects.map(x => ({
+					text: x.text,
+					effect: x.effect,
+					isPotion: x.isPotion,
+					gold: x.calcGold
+				})).sort((a, b) => b.gold - a.gold);
+				potion.gold = Math.floor(potion.gold);
+				potion.name = (potion.isPotion ? 'Potion' : 'Poison') + ' of ' + potion.majorEffect.effect;
+				delete potion.majorEffect;
+				return potion;
 			}
 
 		 	window.onload = function(){
