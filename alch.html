@@ -80,32 +80,98 @@
 				calcRecipies();
 				//console.log('clickety '+index + ': ' + x.currentTarget.title + ' on ' + ingredientName + ' -> ' + x.currentTarget.checked);
 			}
-
+			
+			/*Object.prototype.get = function(property){
+				if(this.hasOwnProperty(property))
+					return property;
+				this[property] = {};
+				return this[property];
+			}*/
+			
 			function calcRecipies(){
 				let rightdiv = document.getElementById('rightdiv');
 				while(rightdiv.firstChild && rightdiv.removeChild(rightdiv.firstChild));
 				
 				// List all wanted effects first (if any). Calc list first, then sort, then show.
-				const possibleWanted = []
-		
-
+				const possible = [];
 				for(let wanted in wantedEffects){
-					if(Object.keys(effectLookup[wanted]).length > 1){
-						console.log(effectLookup[wanted]);
+					if(Object.keys(effectLookup[wanted]).length > 1){						
 						let wantedDiv = document.createElement("div");
+						wantedDiv.importance = 0;
 						wantedDiv.className = "wanted-effect";
 						wantedDiv.innerHTML = "<div class='found-title'>" + wanted + "</div>" ;
 
-						for(ingredient in wantedEffects[wanted])
+						for(ingredient in wantedEffects[wanted]){
 							wantedDiv.innerHTML += '<span class="unknown">' + ingredient + '</span>';
+							wantedDiv.importance++;
+						}
 						wantedDiv.innerHTML += "<br/>";
 						for(ingredient in effectLookup[wanted])
 							if(!wantedEffects[wanted].hasOwnProperty(ingredient))
 								wantedDiv.innerHTML += '<span class="known">' + ingredient + '</span>';
 
-						rightdiv.appendChild(wantedDiv);
+						possible.push(wantedDiv);
 					}
 				}
+				possible.sort((a,b) => b.importance - a.importance);				
+				for(let i=0;i<possible.length;i++) rightdiv.appendChild(possible[i]);
+				//possible.forEach(x=>rightdiv.appendChild(x));
+				
+				// Show most valuable recipies. There can be a lot of recipies. As in thousands. Hmm...
+				let recipyDiv = document.createElement("div");
+				
+				// idea: 
+				// * find all pairs of ingredients that share one effect. (these are simple recipies themselves)
+				// * Find all (unique) combinations of two pairs that share one ingredient (these are the complex reciepies, and should include all 3-rec. with same effect)
+				// * Calc all effects of those ingr
+				
+				let pairs = {};
+				let pairLookup = {};
+				let triplets = {};
+				for(let effect in effectLookup){
+					if(Object.keys(effectLookup[effect]).length > 1)
+					{
+						let ingredientList = Object.keys(effectLookup[effect]).sort();
+						let effectPairs = combinations(ingredientList, 2);
+						//console.log(effectPairs+'');
+						
+						for(let i=0;i<effectPairs.length;i++){
+							const effectPair = effectPairs[i];
+							if(!pairs.hasOwnProperty(effectPair))
+							{	pairs[effectPair] = {};
+							
+								if(!pairLookup.hasOwnProperty(effectPair[0])) pairLookup[effectPair[0]] = {};
+								else{
+									// triplet(s) found! Make sure we haven't found it already though...
+									for(let third in pairLookup[effectPair[0]]){
+										let triplet = [...effectPair, third].sort();
+										//triplets.get(triplet)[effect] = 1;
+										triplets[triplet] = 1;
+										console.log('found triplet: '+triplet);
+									}
+								}
+								pairLookup[effectPair[0]][effectPair[1]] = 1;
+								
+								if(!pairLookup.hasOwnProperty(effectPair[1])) pairLookup[effectPair[1]] = {};
+								else{
+									// triplet(s) found! Make sure we haven't found it already though...
+									for(let third in pairLookup[effectPair[1]]){
+										let triplet = [...effectPair, third].sort();
+										//triplets.get(triplet)[effect] = 1;
+										triplets[triplet] = 1;
+										console.log('found triplet2: '+triplet);
+									}
+								}
+								pairLookup[effectPair[1]][effectPair[0]] = 1;								
+							}
+							pairs[effectPair][effect] = effectPair;
+						}
+					}
+				}
+				console.log(pairs);
+				console.log(pairLookup);
+				console.log(triplets);
+				console.log('DONE');
 			}
 
 		 	window.onload = function(){
