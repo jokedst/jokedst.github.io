@@ -54,6 +54,7 @@
 						effectLookup[effect] = {};
 					effectLookup[effect][ingr.name] = ingr;
 				}
+				calcRecipies();
 		 	}
 
 		 	function removeIngredient(label){
@@ -69,12 +70,13 @@
 						
 					if(checkboxControl.checked){
 						checkboxControl.checked = false;
-						chkClick(i,{currentTarget:checkboxControl});
+						chkClick(i,{currentTarget:checkboxControl}, true);
 					}
 					checkboxControl = checkboxControl.nextElementSibling;
 				}
 				label.classList.remove('included');
 				delete includedIngredients[label.innerText];
+				calcRecipies();
 		 	}
 
 			function labelClick(t){
@@ -84,11 +86,11 @@
 				else
 					includeIngredient(this);
 
-				calcRecipies();
+				//calcRecipies();
 				//document.getElementById('debug').innerText = 'hej ' + this.innerText;
 			}
 
-			function chkClick(index,x){
+			function chkClick(index,x, noRecalc){
 				let ingredientName = x.currentTarget.parentNode.firstElementChild.innerText;
 				let included = x.currentTarget.parentNode.firstElementChild.classList.contains('included');
 				if(!included) includeIngredient(x.currentTarget.parentNode.firstElementChild);
@@ -104,7 +106,8 @@
 						delete wantedEffects[effect];
 				}
 
-				calcRecipies();
+				if(!noRecalc)
+					calcRecipies();
 				//console.log('clickety '+index + ': ' + x.currentTarget.title + ' on ' + ingredientName + ' -> ' + x.currentTarget.checked);
 			}
 			
@@ -119,17 +122,24 @@
 						let wantedDiv = document.createElement("div");
 						wantedDiv.importance = 0;
 						wantedDiv.className = "wanted-effect";
-						wantedDiv.innerHTML = "<div class='found-title'>" + wanted + "</div>" ;
+
+						create('div', wantedDiv, 'found-title', wanted);
 
 						for(ingredient in wantedEffects[wanted]){
-							wantedDiv.innerHTML += '<span class="unknown">' + ingredient + '</span>';
+							let labelId = 'label-'+ingredient;
+							create('span',wantedDiv,'unknown', ingredient + '<input type="checkbox" />')
+								.onclick = () => removeIngredient(document.getElementById(labelId));
 							wantedDiv.importance++;
 						}
-						wantedDiv.innerHTML += "<br/>";
-						for(ingredient in effectLookup[wanted])
-							if(!wantedEffects[wanted].hasOwnProperty(ingredient))
-								wantedDiv.innerHTML += '<span class="known">' + ingredient + '</span>';
-
+						
+						wantedDiv.appendChild(document.createElement("br"));
+						for(ingredient in effectLookup[wanted]){
+							let labelId = 'label-'+ingredient;
+							if(!wantedEffects[wanted].hasOwnProperty(ingredient)){
+								create('span', wantedDiv, 'known', ingredient)
+									.onclick = () => removeIngredient(document.getElementById(labelId));
+							}
+						}
 						possible.push(wantedDiv);
 					}
 				}
@@ -206,18 +216,25 @@
 				for(let i = 0; i < toShow; i++){
 					let recipie = reciepies[i];
 					let div = document.createElement("div");
-						div.className = "recipie-" + (recipie.isPotion ? 'potion' : 'poison');
-						div.innerHTML = "<div class='found-title'>" + recipie.name + " (" + recipie.gold + ")</div>" ;
+					div.className = "recipie-" + (recipie.isPotion ? 'potion' : 'poison');
+					create('div', div, 'found-title', recipie.name + " (" + recipie.gold + ")");
+
+						//div.innerHTML = "<div class='found-title'>" + recipie.name + " (" + recipie.gold + ")</div>" ;
 
 						for(let r = 0; r < recipie.ingredients.length; r++)
 						{
-							div.innerHTML += '<span class="unknown">' + recipie.ingredients[r] + '</span>';						
+							//div.innerHTML += '<span class="unknown">' + recipie.ingredients[r] + '</span>';
+							let labelId = 'label-' + recipie.ingredients[r];
+							create('span',div,'unknown',recipie.ingredients[r])
+									.onclick = () => removeIngredient(document.getElementById(labelId));
 						}
 						
-						div.innerHTML += "<br/>";
+						//div.innerHTML += "<br/>";
+						create('br',div);
 						for(let r = 0; r < recipie.effects.length; r++)
 						{
-							div.innerHTML += '<span class="effect-'+(recipie.effects[r].isPotion ? 'potion' : 'poison')+'">' + recipie.effects[r].text + '</span>';						
+							//div.innerHTML += '<span class="effect-'+(recipie.effects[r].isPotion ? 'potion' : 'poison')+'">' + recipie.effects[r].text + '</span>';
+							create('span',div,'effect-'+(recipie.effects[r].isPotion ? 'potion' : 'poison'), recipie.effects[r].text);
 						}
 
 						rightdiv.appendChild(div)
@@ -229,6 +246,14 @@
 				console.log(pairLookup);
 				console.log(triplets);
 				console.log('DONE');*/
+			}
+
+			function create(type, parent, className, text){
+				let newObject = document.createElement(type);
+				newObject.className = className;
+				if(text) newObject.innerHTML = text;
+				parent.appendChild(newObject);
+				return newObject;
 			}
 			
 			// TODO: UI for setting these
@@ -355,6 +380,7 @@
 
 					let label = document.createElement("span");
 					label.className = "ingredient-name";
+					label.id = 'label-' + ingr.name;//.replace(' ','-');
 					label.innerHTML = ingr.name;
 					label.onclick = labelClick;
 					elem.appendChild(label);
