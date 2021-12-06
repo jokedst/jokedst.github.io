@@ -12,6 +12,7 @@
 		 	var ingrLookup = {};
 		 	var effectLookup = {};
 		 	var wantedEffects = {};
+			var unfilteredPotions;
 
 		 	ingredients.sort((a,b) => a.name.localeCompare(b.name));
 
@@ -41,7 +42,7 @@
 				}
 		 	}
 
-		 	function includeIngredient(label){
+		 	function includeIngredient(label, noRecalc){
 		 		if(label.classList.contains('included'))
 		 			return;
 		 		label.classList.add('included');
@@ -54,10 +55,11 @@
 						effectLookup[effect] = {};
 					effectLookup[effect][ingr.name] = ingr;
 				}
-				calcRecipies();
+				if(!noRecalc)
+					calcRecipies();
 		 	}
 
-		 	function removeIngredient(label){
+		 	function removeIngredient(label, noRecalc){
 		 		if(!label.classList.contains('included'))
 		 			return;
 				let checkboxControl = label.nextElementSibling;
@@ -76,7 +78,8 @@
 				}
 				label.classList.remove('included');
 				delete includedIngredients[label.innerText];
-				calcRecipies();
+				if(!noRecalc)
+					calcRecipies();
 		 	}
 
 			function labelClick(t){
@@ -112,6 +115,7 @@
 			}
 			
 			function calcRecipies(){
+				let timerStart = performance.now();
 				let rightdiv = document.getElementById('rightdiv');
 				while(rightdiv.firstChild && rightdiv.removeChild(rightdiv.firstChild));
 				
@@ -127,8 +131,24 @@
 
 						for(ingredient in wantedEffects[wanted]){
 							let labelId = 'label-'+ingredient;
-							create('span',wantedDiv,'unknown', ingredient + '<input type="checkbox" />')
-								.onclick = () => removeIngredient(document.getElementById(labelId));
+							let labelSpan = document.getElementById(labelId);
+							let ingrDiv = create('span',wantedDiv,'unknown', ingredient) // + '<input type="checkbox" />')
+							let ingrChk = create('input', ingrDiv);
+							ingrChk.type = "checkbox";
+							ingrChk.onclick = e => {
+								e.stopPropagation();
+								console.log('click!!!');
+								let chk = labelSpan.nextElementSibling;
+								for(let i = 0; i < 4; i++){
+									if(chk.title == wanted){
+										chk.checked=false;
+										chkClick(i,{currentTarget:chk});
+										break;
+									}
+									chk = chk.nextElementSibling;
+								}
+							}
+							ingrDiv.onclick = () => removeIngredient(document.getElementById(labelId));
 							wantedDiv.importance++;
 						}
 						
@@ -194,13 +214,13 @@
 				}
 				
 				// Figure out all effects on a triplet
-				for(let tripletKey in triplets){
-					let triplet = tripletKey.split(',');
+				// for(let tripletKey in triplets){
+				// 	let triplet = tripletKey.split(',');
 					
-					// Get all effects of those three that occur at least twice
-					let activeEffects = triplet.flatMap(x=>ingrLookup[x].effectsClean).filter((v,i,s) => s.indexOf(v) < i).filter((v,i,s) => s.indexOf(v) === i);
-					triplets[triplet] = activeEffects;
-				}
+				// 	// Get all effects of those three that occur at least twice
+				// 	let activeEffects = triplet.flatMap(x=>ingrLookup[x].effectsClean).filter((v,i,s) => s.indexOf(v) < i).filter((v,i,s) => s.indexOf(v) === i);
+				// 	triplets[triplet] = activeEffects;
+				// }
 				
 				// Create potions of all recipies
 				let reciepies = Object.keys(triplets).map(k => createPotion(k));
@@ -210,34 +230,38 @@
 					reciepies.push(...Object.keys(pairs).map(k => createPotion(k)));
 					
 				reciepies.sort((a,b) => b.gold - a.gold);
+				unfilteredPotions = reciepies;
 				
 				// Show recipies
-				let toShow = Math.min(reciepies.length, 30);
+				let filter = document.getElementById('filter').value;
+				if(filter == "Pure potions only")
+					reciepies = reciepies.filter(x => !x.effects.some(e=>!e.isPotion));
+				else if(filter == "Pure poisons only")
+					reciepies = reciepies.filter(x => !x.effects.some(e=>e.isPotion));
+				let required_effect = document.getElementById('required_effect').value;
+				if(required_effect != "None")
+					reciepies = reciepies.filter(x => x.effects.some(e=>e.effect == required_effect));
+				let toShow = Math.min(reciepies.length, document.getElementById("recipie_count_to_show").value);
+
 				for(let i = 0; i < toShow; i++){
 					let recipie = reciepies[i];
 					let div = document.createElement("div");
 					div.className = "recipie-" + (recipie.isPotion ? 'potion' : 'poison');
 					create('div', div, 'found-title', recipie.name + " (" + recipie.gold + ")");
 
-						//div.innerHTML = "<div class='found-title'>" + recipie.name + " (" + recipie.gold + ")</div>" ;
+					for(let r = 0; r < recipie.ingredients.length; r++)
+					{
+						let labelId = 'label-' + recipie.ingredients[r];
+						create('span',div,'unknown',recipie.ingredients[r])
+								.onclick = () => removeIngredient(document.getElementById(labelId));
+					}
+					create('br',div);
+					for(let r = 0; r < recipie.effects.length; r++)
+					{
+						create('span',div,'effect-'+(recipie.effects[r].isPotion ? 'potion' : 'poison'), recipie.effects[r].text);
+					}
 
-						for(let r = 0; r < recipie.ingredients.length; r++)
-						{
-							//div.innerHTML += '<span class="unknown">' + recipie.ingredients[r] + '</span>';
-							let labelId = 'label-' + recipie.ingredients[r];
-							create('span',div,'unknown',recipie.ingredients[r])
-									.onclick = () => removeIngredient(document.getElementById(labelId));
-						}
-						
-						//div.innerHTML += "<br/>";
-						create('br',div);
-						for(let r = 0; r < recipie.effects.length; r++)
-						{
-							//div.innerHTML += '<span class="effect-'+(recipie.effects[r].isPotion ? 'potion' : 'poison')+'">' + recipie.effects[r].text + '</span>';
-							create('span',div,'effect-'+(recipie.effects[r].isPotion ? 'potion' : 'poison'), recipie.effects[r].text);
-						}
-
-						rightdiv.appendChild(div)
+					rightdiv.appendChild(div)
 				}
 				
 				/*console.log(reciepies);
@@ -246,6 +270,7 @@
 				console.log(pairLookup);
 				console.log(triplets);
 				console.log('DONE');*/
+				console.log('calc rec time: ' + (performance.now() - timerStart))
 			}
 
 			function create(type, parent, className, text){
@@ -255,9 +280,6 @@
 				parent.appendChild(newObject);
 				return newObject;
 			}
-			
-			// TODO: UI for setting these
-			var skills = {Alchemy_Skill: 50, Fortify_Alchemy: 0, Alchemist_Perk: 40};
 			
 			// Ripped from gerralab more or less. Had to remove jQuery.
 			function createPotion(ingredientList){
@@ -365,7 +387,7 @@
 				})).sort((a, b) => b.gold - a.gold);
 				potion.gold = Math.floor(potion.gold);
 				potion.name = (potion.isPotion ? 'Potion' : 'Poison') + ' of ' + potion.majorEffect.effect;
-				potion.ingredients = ingredientList;
+				potion.ingredients = ingredientList;				
 				delete potion.majorEffect;
 				return potion;
 			}
@@ -397,6 +419,17 @@
 
 					leftdiv.insertBefore(elem, null);
 				}
+
+				document.getElementById("alchemy_skill").value = skills.Alchemy_Skill;
+				document.getElementById("alchemist_perk").value = skills.Alchemist_Perk;
+				let select = document.getElementById('required_effect');
+				for(let effect in allEffects){
+				//for (let i = 0; i<=max; i++){
+					var opt = document.createElement('option');
+					opt.value = effect;
+					opt.innerHTML = effect;
+					select.appendChild(opt);
+				}
 		 	};
 
 			function combinations(sourceArray, comboLength) {
@@ -415,6 +448,72 @@
 
 				makeNextCombos([], 0, comboLength);
 				return results;
+			}
+
+			// TODO: UI for setting these
+			var skills = {Alchemy_Skill: 50, Fortify_Alchemy: 0, Alchemist_Perk: 40};
+			
+			// var plantableIngredients = ["Bleeding Crown","Blisterwort","Blue Mountain Flower","Canis Root","Creep Cluster","Deathbell","Dragon's Tongue","Fly Amanita","Giant Lichen",
+			// 							"Glowing Mushroom","Grass Pod","Imp Stool","Jazbay Grapes","Juniper Berries","Lavender","Mora Tapinella","Namira's Rot",
+			// 							"Nightshade","Purple Mountain Flower","Red Mountain Flower","Scaly Pholiota","Snowberries","Swamp Fungal Pod",
+			// 							"Thistle Branch","Tundra Cotton","Wheat","White Cap"];
+			// var plantable = {};
+			// for(let i=0;i<plantableIngredients.length;i++)
+			// 	plantable[plantableIngredients[i]] = 1;
+			var plantable = {"Bleeding Crown":1,"Blisterwort":1,"Blue Mountain Flower":1,"Canis Root":1,"Creep Cluster":1,"Deathbell":1,"Dragon's Tongue":1,"Fly Amanita":1,"Giant Lichen":1,"Glowing Mushroom":1,"Grass Pod":1,"Imp Stool":1,"Jazbay Grapes":1,"Juniper Berries":1,"Lavender":1,"Mora Tapinella":1,"Namira's Rot":1,"Nightshade":1,"Purple Mountain Flower":1,"Red Mountain Flower":1,"Scaly Pholiota":1,"Snowberries":1,"Swamp Fungal Pod":1,"Thistle Branch":1,"Tundra Cotton":1,"Wheat":1,"White Cap":1};
+
+			function changeAnySkill(){				
+				skills.Fortify_Alchemy = document.getElementById('alchemy_fortify').value;
+				skills.Benefactor_Perk = document.getElementById('benefactor_chk').checked;
+				skills.Physician_Perk = document.getElementById('physician_chk').checked;
+				skills.Purity_Perk = document.getElementById('purity_chk').checked;
+				skills.Poisoner_Perk = document.getElementById('poisoner_chk').checked;
+				calcRecipies();
+			}
+			function changeSkill(e){
+				skills.Alchemy_Skill = e.value;
+				calcRecipies();
+			}
+			function changePerkLevel(e){
+				skills.Alchemist_Perk = e.value;
+				calcRecipies();
+			}
+			function changeFilter(e){
+				calcRecipies();
+			}
+			function changePreset(e){
+				console.log('preset change: ' + e.value);
+				if(e.value == "Plantable"){
+					// Brute force
+					let count = 0;
+					for(let div = document.getElementById('leftdiv').firstElementChild; div ;div = div.nextElementSibling){
+						count++;
+						let label = div.firstElementChild;
+						let included = label.classList.contains('included');
+						if(included && !plantable[label.innerText])
+							removeIngredient(label, true);
+						else if(plantable[label.innerText])
+							includeIngredient(label, true);
+					}
+					console.log('found ingredients: '+count);
+					calcRecipies();
+				}else if(e.value == "None"){
+					for(let div = document.getElementById('leftdiv').firstElementChild; div ;div = div.nextElementSibling){					
+						let label = div.firstElementChild;
+						let included = label.classList.contains('included');
+						if(included)
+							removeIngredient(label, true);
+					}
+					calcRecipies();
+				}else if(e.value == "All"){
+					for(let div = document.getElementById('leftdiv').firstElementChild; div ;div = div.nextElementSibling){					
+						let label = div.firstElementChild;
+						let included = label.classList.contains('included');
+						if(!included)
+							includeIngredient(label, true);
+					}
+					calcRecipies();
+				}
 			}
 		</script>
 		<style type="text/css">
@@ -499,10 +598,56 @@
 			.effect-poison{
 				color: #fab6b6;
 			}
-			
+			.ui input[type="number"]{
+				width: 45px;
+			}
 		</style>
 	</head>
 	<body>
+		<div class="ui">
+			<span>Skill</span>
+			<input type="number" id="alchemy_skill" min="0" max="100" onchange="changeSkill(this)">
+			<span>Perk</span>
+			<select id="alchemist_perk" onchange="changePerkLevel(this)">
+				<option>0</option>
+				<option>20</option>
+				<option>40</option>
+				<option>60</option>
+				<option>80</option>
+				<option>100</option>
+			</select>
+			<span>Filter</span>
+			<select id="filter" onchange="changeFilter(this)">
+				<option>None</option>
+				<option>Pure potions only</option>
+				<option>Pure poisons only</option>
+			</select>
+			<span>Preset</span>
+			<select id="preset" onchange="changePreset(this)">
+				<option>None</option>
+				<option>Plantable</option>
+				<option>All</option>
+			</select>
+			<span>Show</span>
+			<input type="number" id="recipie_count_to_show" min="1" max="10000" onchange="calcRecipies()" value="30">
+			<span>Required</span>
+			<select id="required_effect" onchange="calcRecipies()">
+				<option>None</option>
+			</select>
+
+
+
+			<span>Fortify</span>
+			<input type="number" id="alchemy_fortify" min="-100" max="100" onchange="changeAnySkill()" value="0">
+			<span>Physician</span>
+			<input type="checkbox" onchange="changeAnySkill()" id='physician_chk'/>
+			<span>Benefactor</span>
+			<input type="checkbox" onchange="changeAnySkill()" id='benefactor_chk'/>
+			<span>Poisoner</span>
+			<input type="checkbox" onchange="changeAnySkill()" id='poisoner_chk'/>
+			<span>Purity</span>
+			<input type="checkbox" onchange="changeAnySkill()" id='purity_chk'/>
+		</div>
 		<div class="container">
 			<div id="leftdiv">
 				<!--<div id="test" class="ingredient-div">
