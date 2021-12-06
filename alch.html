@@ -3,16 +3,15 @@
 		<script type="text/javascript" src="alchemy.js"></script>
 		<script type="text/javascript">
 			// TODO
-			// * Make receipie ingredients clickable
-			//   - When you run out, so remove it
 			// * Make wanted effects ingredients clickable
-			//   - When you learn it
-			//   - Maybe an extra button for when you run out?
+			//   - When you learn it (DONE)
+			//   - Maybe an extra button for when you run out? (Done, but sux because it recalcs, so you can't click all you lernt)
 		 	var includedIngredients = {};
 		 	var ingrLookup = {};
 		 	var effectLookup = {};
 		 	var wantedEffects = {};
 			var unfilteredPotions;
+			var skills = {Alchemy_Skill: 50, Fortify_Alchemy: 0, Alchemist_Perk: 40};
 
 		 	ingredients.sort((a,b) => a.name.localeCompare(b.name));
 
@@ -88,9 +87,6 @@
 					removeIngredient(this);
 				else
 					includeIngredient(this);
-
-				//calcRecipies();
-				//document.getElementById('debug').innerText = 'hej ' + this.innerText;
 			}
 
 			function chkClick(index,x, noRecalc){
@@ -176,13 +172,11 @@
 				let pairs = {};
 				let pairLookup = {};
 				let triplets = {};
-				//let tripletSet = new Set();
 				for(let effect in effectLookup){
 					if(Object.keys(effectLookup[effect]).length > 1)
 					{
 						let ingredientList = Object.keys(effectLookup[effect]).sort();
 						let effectPairs = combinations(ingredientList, 2);
-						//console.log(effectPairs+'');
 						
 						for(let i=0;i<effectPairs.length;i++){
 							const effectPair = effectPairs[i];
@@ -195,7 +189,6 @@
 									for(let third in pairLookup[effectPair[0]]){
 										let triplet = [...effectPair, third].sort();
 										triplets[triplet] = 1;
-										//tripletSet.add(triplet);
 									}
 								}
 								pairLookup[effectPair[0]][effectPair[1]] = 1;
@@ -206,7 +199,6 @@
 									for(let third in pairLookup[effectPair[1]]){
 										let triplet = [...effectPair, third].sort();
 										triplets[triplet] = 1;
-										//tripletSet.add(triplet);
 									}
 								}
 								pairLookup[effectPair[1]][effectPair[0]] = 1;								
@@ -216,19 +208,8 @@
 					}
 				}
 				
-				// Figure out all effects on a triplet
-				// for(let tripletKey in triplets){
-				// 	let triplet = tripletKey.split(',');
-					
-				// 	// Get all effects of those three that occur at least twice
-				// 	let activeEffects = triplet.flatMap(x=>ingrLookup[x].effectsClean).filter((v,i,s) => s.indexOf(v) < i).filter((v,i,s) => s.indexOf(v) === i);
-				// 	triplets[triplet] = activeEffects;
-				// }
-				
 				// Create potions of all recipies
 				let reciepies = Object.keys(triplets).map(k => createPotion(k));
-				// let reciepies = [];
-				// tripletSet.forEach(k => reciepies.push(createPotionSet(k)));
 				
 				// Only bother with 2-ingredient stuff if we have < 50
 				if(reciepies.length < 50)
@@ -286,21 +267,11 @@
 				parent.appendChild(newObject);
 				return newObject;
 			}
-			
-			// function createPotionStr(ingredientListString){
-			// 	const ingredientList = ingredientListString.split(',');
-			// 	const set = new Set(ingredientList);
-			// 	return createPotionSet(set);
-			// }
 
 			// Ripped from gerralab more or less. Had to remove jQuery.
 			function createPotion(ingredientListString){
 				// if(typeof(ingredientList) === "string") 
-				const 	ingredientList = ingredientListString.split(',');
-				//const ingredientList = [...ingredientListSet];
-				// const effectsQ = ingredientList.flatMap(x => ingrLookup[x].effectsClean) 	// get effects
-				// 	.filter((v,i,s) => s.indexOf(v) < i)								// that occurs at least twice
-				// 	.filter((v,i,s) => s.indexOf(v) === i);								// remove dupes
+				const ingredientList = ingredientListString.split(',');
 
 				// Get effects that occurs at least twice
 				const existsAlready = new Set(), effectsSet = new Set();
@@ -315,12 +286,6 @@
 					}
 				}
 				const effects = [...effectsSet];
-
-				// if(effects.length != effectsQ.length){
-				// 	console.log('wtf? ' + effectsQ + ' - ' + effects)
-				// }
-					
-				//console.log('potion effects: ' + effects);
 				
 				let bestEffects = effects.map(e => ingredientList.map(i => ingrLookup[i].effect[e]).filter(x=>x).reduce((e1,e2) => e1.cost > e2.cost ? e1 : e2 ));
 				
@@ -443,7 +408,7 @@
 
 					let label = document.createElement("span");
 					label.className = "ingredient-name";
-					label.id = 'label-' + ingr.name;//.replace(' ','-');
+					label.id = 'label-' + ingr.name;
 					label.innerHTML = ingr.name;
 					label.onclick = labelClick;
 					elem.appendChild(label);
@@ -499,9 +464,6 @@
 				makeNextCombos([], 0, comboLength);
 				return results;
 			}
-
-			// TODO: UI for setting these
-			var skills = {Alchemy_Skill: 50, Fortify_Alchemy: 0, Alchemist_Perk: 40};
 			
 			// var plantableIngredients = ["Bleeding Crown","Blisterwort","Blue Mountain Flower","Canis Root","Creep Cluster","Deathbell","Dragon's Tongue","Fly Amanita","Giant Lichen",
 			// 							"Glowing Mushroom","Grass Pod","Imp Stool","Jazbay Grapes","Juniper Berries","Lavender","Mora Tapinella","Namira's Rot",
