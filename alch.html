@@ -176,6 +176,7 @@
 				let pairs = {};
 				let pairLookup = {};
 				let triplets = {};
+				//let tripletSet = new Set();
 				for(let effect in effectLookup){
 					if(Object.keys(effectLookup[effect]).length > 1)
 					{
@@ -194,6 +195,7 @@
 									for(let third in pairLookup[effectPair[0]]){
 										let triplet = [...effectPair, third].sort();
 										triplets[triplet] = 1;
+										//tripletSet.add(triplet);
 									}
 								}
 								pairLookup[effectPair[0]][effectPair[1]] = 1;
@@ -204,6 +206,7 @@
 									for(let third in pairLookup[effectPair[1]]){
 										let triplet = [...effectPair, third].sort();
 										triplets[triplet] = 1;
+										//tripletSet.add(triplet);
 									}
 								}
 								pairLookup[effectPair[1]][effectPair[0]] = 1;								
@@ -224,6 +227,8 @@
 				
 				// Create potions of all recipies
 				let reciepies = Object.keys(triplets).map(k => createPotion(k));
+				// let reciepies = [];
+				// tripletSet.forEach(k => reciepies.push(createPotionSet(k)));
 				
 				// Only bother with 2-ingredient stuff if we have < 50
 				if(reciepies.length < 50)
@@ -258,7 +263,8 @@
 					create('br',div);
 					for(let r = 0; r < recipie.effects.length; r++)
 					{
-						create('span',div,'effect-'+(recipie.effects[r].isPotion ? 'potion' : 'poison'), recipie.effects[r].text);
+						let text = recipie.effects[r].text.replace('<mag>',recipie.effects[r].calcMag).replace('<dur>',recipie.effects[r].calcDur);
+						create('span',div,'effect-'+(recipie.effects[r].isPotion ? 'potion' : 'poison'), text);
 					}
 
 					rightdiv.appendChild(div)
@@ -281,12 +287,38 @@
 				return newObject;
 			}
 			
+			// function createPotionStr(ingredientListString){
+			// 	const ingredientList = ingredientListString.split(',');
+			// 	const set = new Set(ingredientList);
+			// 	return createPotionSet(set);
+			// }
+
 			// Ripped from gerralab more or less. Had to remove jQuery.
-			function createPotion(ingredientList){
-				if(typeof(ingredientList) === "string") ingredientList = ingredientList.split(',');
-				let effects = ingredientList.flatMap(x => ingrLookup[x].effectsClean) 	// get effects
-					.filter((v,i,s) => s.indexOf(v) < i)								// that occurs at least twice
-					.filter((v,i,s) => s.indexOf(v) === i);								// remove dupes
+			function createPotion(ingredientListString){
+				// if(typeof(ingredientList) === "string") 
+				const 	ingredientList = ingredientListString.split(',');
+				//const ingredientList = [...ingredientListSet];
+				// const effectsQ = ingredientList.flatMap(x => ingrLookup[x].effectsClean) 	// get effects
+				// 	.filter((v,i,s) => s.indexOf(v) < i)								// that occurs at least twice
+				// 	.filter((v,i,s) => s.indexOf(v) === i);								// remove dupes
+
+				// Get effects that occurs at least twice
+				const existsAlready = new Set(), effectsSet = new Set();
+				for(let i=0; i<ingredientList.length; i++){
+					let thisEffects = ingrLookup[ingredientList[i]].effectsClean;
+					for(let e = 0; e < 4; e++){
+						const thisEffect = thisEffects[e];
+						if(existsAlready.has(thisEffect))
+							effectsSet.add(thisEffect);
+						else
+							existsAlready.add(thisEffect);
+					}
+				}
+				const effects = [...effectsSet];
+
+				// if(effects.length != effectsQ.length){
+				// 	console.log('wtf? ' + effectsQ + ' - ' + effects)
+				// }
 					
 				//console.log('potion effects: ' + effects);
 				
@@ -300,7 +332,14 @@
 				potion.effects = bestEffects.map(function(e){
 					let baseEffect = allEffects[e.effect];
 					
-					const effect = Object.assign({}, e, baseEffect);
+					//const effect = Object.assign({}, e, baseEffect);
+					const effect = {
+						effect: e.effect,
+						isPotion: baseEffect.isPotion,
+						description: baseEffect.description,
+						fixedMagnitude: baseEffect.fixedMagnitude,
+						fixedDuration: baseEffect.fixedDuration
+					}
 					
 					effect.defMag = e.magnitude * baseEffect.baseMagnitude / e.magnitudeDivider;
 					effect.defDur = baseEffect.baseDuration * e.deltaDur / e.durDivider;
@@ -376,14 +415,16 @@
 							effect.calcDur = Math.round(effect.enDur);
 						}
 					
-						effect.text = effect.description.replace('<mag>',effect.calcMag).replace('<dur>',effect.calcDur);
+						//effect.text = effect.description.replace('<mag>',effect.calcMag).replace('<dur>',effect.calcDur);
 						potion.gold += effect.calcGold;
 				}
 				potion.effects = potion.effects.map(x => ({
-					text: x.text,
+					text: x.description,
 					effect: x.effect,
 					isPotion: x.isPotion,
-					gold: x.calcGold
+					gold: x.calcGold,
+					calcMag: x.calcMag,
+					calcDur: x.calcDur
 				})).sort((a, b) => b.gold - a.gold);
 				potion.gold = Math.floor(potion.gold);
 				potion.name = (potion.isPotion ? 'Potion' : 'Poison') + ' of ' + potion.majorEffect.effect;
