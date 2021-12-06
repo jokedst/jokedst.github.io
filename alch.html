@@ -212,7 +212,7 @@
 				let reciepies = Object.keys(triplets).map(k => createPotion(k));
 				
 				// Only bother with 2-ingredient stuff if we have < 50
-				if(reciepies.length < 50)
+				//if(reciepies.length < 50)
 					reciepies.push(...Object.keys(pairs).map(k => createPotion(k)));
 					
 				reciepies.sort((a,b) => b.gold - a.gold);
