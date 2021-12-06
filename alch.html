@@ -300,7 +300,7 @@
 				potion.effects = bestEffects.map(function(e){
 					let baseEffect = allEffects[e.effect];
 					
-					let effect = {...e, ...baseEffect};
+					const effect = Object.assign({}, e, baseEffect);
 					
 					effect.defMag = e.magnitude * baseEffect.baseMagnitude / e.magnitudeDivider;
 					effect.defDur = baseEffect.baseDuration * e.deltaDur / e.durDivider;
@@ -420,11 +420,20 @@
 					leftdiv.insertBefore(elem, null);
 				}
 
+				let storedSkills = JSON.parse(window.localStorage.getItem('skills'));
+				if(storedSkills)
+					skills = storedSkills;
+								
 				document.getElementById("alchemy_skill").value = skills.Alchemy_Skill;
-				document.getElementById("alchemist_perk").value = skills.Alchemist_Perk;
+				document.getElementById("alchemist_perk").value = skills.Alchemist_Perk;				
+				document.getElementById('alchemy_fortify').value = skills.Fortify_Alchemy;
+				document.getElementById('benefactor_chk').checked = !!skills.Benefactor_Perk;
+				document.getElementById('physician_chk').checked = !!skills.Physician_Perk;
+				document.getElementById('purity_chk').checked = !!skills.Purity_Perk;
+				document.getElementById('poisoner_chk').checked = !!skills.Poisoner_Perk;
+				
 				let select = document.getElementById('required_effect');
 				for(let effect in allEffects){
-				//for (let i = 0; i<=max; i++){
 					var opt = document.createElement('option');
 					opt.value = effect;
 					opt.innerHTML = effect;
@@ -463,21 +472,16 @@
 			var plantable = {"Bleeding Crown":1,"Blisterwort":1,"Blue Mountain Flower":1,"Canis Root":1,"Creep Cluster":1,"Deathbell":1,"Dragon's Tongue":1,"Fly Amanita":1,"Giant Lichen":1,"Glowing Mushroom":1,"Grass Pod":1,"Imp Stool":1,"Jazbay Grapes":1,"Juniper Berries":1,"Lavender":1,"Mora Tapinella":1,"Namira's Rot":1,"Nightshade":1,"Purple Mountain Flower":1,"Red Mountain Flower":1,"Scaly Pholiota":1,"Snowberries":1,"Swamp Fungal Pod":1,"Thistle Branch":1,"Tundra Cotton":1,"Wheat":1,"White Cap":1};
 
 			function changeAnySkill(){				
-				skills.Fortify_Alchemy = document.getElementById('alchemy_fortify').value;
+				skills.Fortify_Alchemy = document.getElementById('alchemy_fortify').value * 1;
 				skills.Benefactor_Perk = document.getElementById('benefactor_chk').checked;
 				skills.Physician_Perk = document.getElementById('physician_chk').checked;
 				skills.Purity_Perk = document.getElementById('purity_chk').checked;
 				skills.Poisoner_Perk = document.getElementById('poisoner_chk').checked;
+				skills.Alchemy_Skill = document.getElementById('alchemy_skill').value * 1;
+				skills.Alchemist_Perk = document.getElementById('alchemist_perk').value * 1;
+				window.localStorage.setItem('skills', JSON.stringify(skills));
 				calcRecipies();
-			}
-			function changeSkill(e){
-				skills.Alchemy_Skill = e.value;
-				calcRecipies();
-			}
-			function changePerkLevel(e){
-				skills.Alchemist_Perk = e.value;
-				calcRecipies();
-			}
+			}			
 			function changeFilter(e){
 				calcRecipies();
 			}
@@ -606,9 +610,9 @@
 	<body>
 		<div class="ui">
 			<span>Skill</span>
-			<input type="number" id="alchemy_skill" min="0" max="100" onchange="changeSkill(this)">
+			<input type="number" id="alchemy_skill" min="0" max="100" onchange="changeAnySkill()">
 			<span>Perk</span>
-			<select id="alchemist_perk" onchange="changePerkLevel(this)">
+			<select id="alchemist_perk" onchange="changeAnySkill()">
 				<option>0</option>
 				<option>20</option>
 				<option>40</option>
@@ -617,7 +621,7 @@
 				<option>100</option>
 			</select>
 			<span>Filter</span>
-			<select id="filter" onchange="changeFilter(this)">
+			<select id="filter" onchange="calcRecipies()">
 				<option>None</option>
 				<option>Pure potions only</option>
 				<option>Pure poisons only</option>
@@ -650,20 +654,8 @@
 		</div>
 		<div class="container">
 			<div id="leftdiv">
-				<!--<div id="test" class="ingredient-div">
-					<span class="ingredient-name">This is name</span>
-					<input type="checkbox" /><input type="checkbox" /><input type="checkbox" /><input type="checkbox" />
-				</div>
-				<div id="test2" class="ingredient-div">
-					<span class="ingredient-name">This is another name</span>
-					<input type="checkbox" />
-					<input type="checkbox" />
-					<input type="checkbox" />
-					<input type="checkbox" />
-				</div>-->
 			</div>
 			<div id="rightdiv">
-				Meh
 			</div>
 		</div>
 		<div id="debug"></div>
