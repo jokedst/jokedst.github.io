@@ -46,8 +46,8 @@
 		 			return;
 		 		label.classList.add('included');
 
-		 		let ingr = ingrLookup[label.innerText];
-				includedIngredients[label.innerText] = ingr;
+		 		let ingr = ingrLookup[label.name];
+				includedIngredients[label.name] = ingr;
 				for(let i=0;i<4;i++){
 					let effect = ingr.effectsClean[i];
 					if(!effectLookup.hasOwnProperty(effect))
@@ -63,8 +63,8 @@
 		 			return;
 				let checkboxControl = label.nextElementSibling;
 				for(let i=0;i<4;i++){
-					let effect = ingrLookup[label.innerText].effectsClean[i];
-					delete effectLookup[effect][label.innerText];
+					let effect = ingrLookup[label.name].effectsClean[i];
+					delete effectLookup[effect][label.name];
 
 					if(Object.keys(effectLookup[effect]).length == 0)
 						delete effectLookup[effect];
@@ -76,7 +76,7 @@
 					checkboxControl = checkboxControl.nextElementSibling;
 				}
 				label.classList.remove('included');
-				delete includedIngredients[label.innerText];
+				delete includedIngredients[label.name];
 				if(!noRecalc)
 					calcRecipies();
 		 	}
@@ -90,7 +90,7 @@
 			}
 
 			function chkClick(index,x, noRecalc){
-				let ingredientName = x.currentTarget.parentNode.firstElementChild.innerText;
+				let ingredientName = x.currentTarget.parentNode.firstElementChild.name;
 				let included = x.currentTarget.parentNode.firstElementChild.classList.contains('included');
 				if(!included) includeIngredient(x.currentTarget.parentNode.firstElementChild);
 
@@ -162,7 +162,7 @@
 				possible.sort((a,b) => b.importance - a.importance).forEach(x => rightdiv.appendChild(x));
 				
 				// Show most valuable recipies. There can be a lot of recipies. As in thousands. Hmm...
-				let recipyDiv = document.createElement("div");
+				//let recipyDiv = document.createElement("div");
 				
 				// idea: 
 				// * find all pairs of ingredients that share one effect. (these are simple recipies themselves)
@@ -209,7 +209,8 @@
 				}
 				
 				// Create potions of all recipies
-				let reciepies = Object.keys(triplets).map(k => createPotion(k));
+				let twoIngrOnly = document.getElementById('twoIngr_chk').checked;
+				let reciepies = twoIngrOnly ? [] : Object.keys(triplets).map(k => createPotion(k));
 				
 				// Only bother with 2-ingredient stuff if we have < 50
 				//if(reciepies.length < 50)
@@ -257,7 +258,7 @@
 				console.log(pairLookup);
 				console.log(triplets);
 				console.log('DONE');*/
-				console.log('calc rec time: ' + (performance.now() - timerStart))
+				console.log('calc rec time: ' + (performance.now() - timerStart) + ' ms')
 			}
 
 			function create(type, parent, className, text){
@@ -294,7 +295,10 @@
 				
 				let potion = {gold:0};
 				
-				potion.effects = bestEffects.map(function(e){
+				potion.effects = [];
+				for(let ei = 0; ei < bestEffects.length; ei++){
+					let e = bestEffects[ei];
+				//potion.effects = bestEffects.map(function(e){
 					let baseEffect = allEffects[e.effect];
 					
 					//const effect = Object.assign({}, e, baseEffect);
@@ -334,8 +338,9 @@
 						potion.majorEffect = effect;
 					}
 					
-					return effect;
-				});
+					//return effect;
+					potion.effects.push(effect);
+				}//);
 				potion.isPotion = potion.majorEffect.isPotion;
 				if(skills.Purity_Perk)
 					potion.effects = potion.effects.filter(e => e.isPotion == potion.isPotion);
@@ -411,6 +416,10 @@
 					label.id = 'label-' + ingr.name;
 					label.innerHTML = ingr.name;
 					label.onclick = labelClick;
+					label.name = ingr.name;
+					
+					create('span',label,'tooltip','This is text');
+					
 					elem.appendChild(label);
 
 					for(let i=0;i<4;i++){
@@ -489,7 +498,6 @@
 				calcRecipies();
 			}
 			function changePreset(e){
-				console.log('preset change: ' + e.value);
 				if(e.value == "Plantable"){
 					// Brute force
 					let count = 0;
@@ -497,9 +505,9 @@
 						count++;
 						let label = div.firstElementChild;
 						let included = label.classList.contains('included');
-						if(included && !plantable[label.innerText])
+						if(included && !plantable[label.name])
 							removeIngredient(label, true);
-						else if(plantable[label.innerText])
+						else if(plantable[label.name])
 							includeIngredient(label, true);
 					}
 					console.log('found ingredients: '+count);
@@ -521,6 +529,9 @@
 					}
 					calcRecipies();
 				}
+			}
+			function changeTwoIngedientsOnly(checked){
+				console.log('2 only: ' + checked)
 			}
 		</script>
 		<style type="text/css">
@@ -608,6 +619,24 @@
 			.ui input[type="number"]{
 				width: 45px;
 			}
+			
+			.ingredient-name:hover .tooltip {
+			  /* NEW */
+			  display: block;
+			}
+
+			.tooltip {
+			  display: none;
+			  /* NEW */
+			  background: #C8C8C8;
+			  margin-left: 58px;
+			  padding: 10px;
+			  position: absolute;
+			  z-index: 1000;
+			  /*width: 200px;
+			  height: 100px;*/
+			  opacity: 0.8;
+			}
 		</style>
 	</head>
 	<body>
@@ -654,6 +683,8 @@
 			<input type="checkbox" onchange="changeAnySkill()" id='poisoner_chk'/>
 			<span>Purity</span>
 			<input type="checkbox" onchange="changeAnySkill()" id='purity_chk'/>
+			<span>2 ingr only</span>
+			<input type="checkbox" onchange="calcRecipies()" id='twoIngr_chk'/>
 		</div>
 		<div class="container">
 			<div id="leftdiv">
