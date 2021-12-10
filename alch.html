@@ -124,32 +124,71 @@
 						wantedDiv.className = "wanted-effect";
 
 						create('div', wantedDiv, 'found-title', wanted);
+						const wantedIngredientsCount = Object.keys(wantedEffects[wanted]).length;
+						const ingrCheckboxes = [];
 
-						for(ingredient in wantedEffects[wanted]){
-							let labelId = 'label-'+ingredient;
+						// If only one ingredient is wanted, clicking it's checkbox makes it "known"
+						// If there is two or three, clicking all, or clicking one/two + "KNOW" should make them "known"
+						// If there is more than three, you have to click the "KNOW"-button when done. Or do you? Perhaps when clicking all we should just assume all is known and DOIT
+						// => IF ALL chekcboxes are checked, automatically set them as known. Otherwise the "KNOW" button has to be clicked.
+
+						for(let ingredient in wantedEffects[wanted]){
+							let labelId = 'label-' + ingredient;
 							let labelSpan = document.getElementById(labelId);
-							let ingrDiv = create('span',wantedDiv,'unknown', ingredient) // + '<input type="checkbox" />')
+							let ingrDiv = create('span', wantedDiv, 'unknown', ingredient);
+							ingrDiv.name = ingredient;
 							let ingrChk = create('input', ingrDiv);
+							ingrCheckboxes.push(ingrChk);
 							ingrChk.type = "checkbox";
 							ingrChk.onclick = e => {
 								e.stopPropagation();
-								console.log('click!!!');
-								let chk = labelSpan.nextElementSibling;
-								for(let i = 0; i < 4; i++){
-									if(chk.title == wanted){
-										chk.checked=false;
-										chkClick(i,{currentTarget:chk});
-										break;
+								
+								if(ingrCheckboxes.every(c => c.checked)){
+									// All are checked. Mark all as known.
+									for(let ci = 0; ci < ingrCheckboxes.length; ci++){
+										let ingredientName = ingrCheckboxes[ci].parentNode.name;
+										let labelSpan2 = document.getElementById('label-' + ingredientName);
+										let chk = labelSpan2.nextElementSibling;
+										for(let i = 0; i < 4; i++){
+											if(chk.title == wanted){
+												chk.checked=false;
+												chkClick(i,{currentTarget:chk});
+												break;
+											}
+											chk = chk.nextElementSibling;
+										}
 									}
-									chk = chk.nextElementSibling;
 								}
-							}
+							};
 							ingrDiv.onclick = () => removeIngredient(document.getElementById(labelId));
 							wantedDiv.importance++;
 						}
 						
+						// Create a button to mark effecs as "known" on an ingredient, i.e. after you lern it
+						if(wantedIngredientsCount > 1){
+							let knownButton = create('span', wantedDiv, 'mark-known', 'KNOW');
+							knownButton.title = "Mark checked ingredients as known";
+							knownButton.onclick = e => {
+								for(let ci = 0; ci < ingrCheckboxes.length; ci++){
+									if(ingrCheckboxes[ci].checked){
+										let ingredientName = ingrCheckboxes[ci].parentNode.name;
+										let labelSpan2 = document.getElementById('label-' + ingredientName);
+										let chk = labelSpan2.nextElementSibling;
+										for(let i = 0; i < 4; i++){
+											if(chk.title == wanted){
+												chk.checked=false;
+												chkClick(i,{currentTarget:chk});
+												break;
+											}
+											chk = chk.nextElementSibling;
+										}
+									}
+								}
+							};
+						}
+						
 						wantedDiv.appendChild(document.createElement("br"));
-						for(ingredient in effectLookup[wanted]){
+						for(let ingredient in effectLookup[wanted]){
 							let labelId = 'label-'+ingredient;
 							if(!wantedEffects[wanted].hasOwnProperty(ingredient)){
 								create('span', wantedDiv, 'known', ingredient)
@@ -162,7 +201,6 @@
 				possible.sort((a,b) => b.importance - a.importance).forEach(x => rightdiv.appendChild(x));
 				
 				// Show most valuable recipies. There can be a lot of recipies. As in thousands. Hmm...
-				//let recipyDiv = document.createElement("div");
 				
 				// idea: 
 				// * find all pairs of ingredients that share one effect. (these are simple recipies themselves)
@@ -208,13 +246,10 @@
 					}
 				}
 				
-				// Create potions of all recipies
+				// Create potions of all recipies. Ignore triplets if "2 ingr only" is checked
 				let twoIngrOnly = document.getElementById('twoIngr_chk').checked;
 				let reciepies = twoIngrOnly ? [] : Object.keys(triplets).map(k => createPotion(k));
-				
-				// Only bother with 2-ingredient stuff if we have < 50
-				//if(reciepies.length < 50)
-					reciepies.push(...Object.keys(pairs).map(k => createPotion(k)));
+				reciepies.push(...Object.keys(pairs).map(k => createPotion(k)));
 					
 				reciepies.sort((a,b) => b.gold - a.gold);
 				unfilteredPotions = reciepies;
@@ -258,7 +293,7 @@
 				console.log(pairLookup);
 				console.log(triplets);
 				console.log('DONE');*/
-				console.log('calc rec time: ' + (performance.now() - timerStart) + ' ms')
+				console.log('calc rec time: ' + (performance.now() - timerStart).toFixed(2) + ' ms')
 			}
 
 			function create(type, parent, className, text){
@@ -335,13 +370,13 @@
 					
 					if (effect.calcGold > bestGold) {
 						bestGold = effect.calcGold;
-						potion.majorEffect = effect;
+						majorEffect = effect;
 					}
 					
 					//return effect;
 					potion.effects.push(effect);
 				}//);
-				potion.isPotion = potion.majorEffect.isPotion;
+				potion.isPotion = majorEffect.isPotion;
 				if(skills.Purity_Perk)
 					potion.effects = potion.effects.filter(e => e.isPotion == potion.isPotion);
 				
@@ -397,9 +432,8 @@
 					calcDur: x.calcDur
 				})).sort((a, b) => b.gold - a.gold);
 				potion.gold = Math.floor(potion.gold);
-				potion.name = (potion.isPotion ? 'Potion' : 'Poison') + ' of ' + potion.majorEffect.effect;
-				potion.ingredients = ingredientList;				
-				delete potion.majorEffect;
+				potion.name = (potion.isPotion ? 'Potion' : 'Poison') + ' of ' + majorEffect.effect;
+				potion.ingredients = ingredientList;
 				return potion;
 			}
 
@@ -412,13 +446,13 @@
 					elem.className = 'ingredient-div';
 
 					let label = document.createElement("span");
-					label.className = "ingredient-name";
+					label.className = "ingredient-name has-tooltip";
 					label.id = 'label-' + ingr.name;
 					label.innerHTML = ingr.name;
 					label.onclick = labelClick;
 					label.name = ingr.name;
 					
-					create('span',label,'tooltip','This is text');
+					create('span',label,'tooltip',ingr.where + '</br>' + ingr.effectsClean[0] + '</br>' + ingr.effectsClean[1] + '</br>' + ingr.effectsClean[2] + '</br>' + ingr.effectsClean[3]);
 					
 					elem.appendChild(label);
 
@@ -429,6 +463,9 @@
 						chk.title = ingr.effectsClean[i];						
 						chk.onclick = x=>chkClick(index,x);
 
+						<!-- chk.className = "has-tooltip"; -->
+						<!-- create('span',chk,'tooltip',ingr.effectsClean[i]); -->
+						
 						elem.appendChild(chk);
 					}
 
@@ -449,10 +486,11 @@
 				
 				let select = document.getElementById('required_effect');
 				for(let effect in allEffects){
-					var opt = document.createElement('option');
+					create('option', select, null, effect).value = effect;
+					/*var opt = document.createElement('option');
 					opt.value = effect;
 					opt.innerHTML = effect;
-					select.appendChild(opt);
+					select.appendChild(opt);*/
 				}
 		 	};
 
@@ -619,23 +657,29 @@
 			.ui input[type="number"]{
 				width: 45px;
 			}
-			
-			.ingredient-name:hover .tooltip {
-			  /* NEW */
-			  display: block;
+			.has-tooltip:hover .tooltip {
+			  display: inherit;
 			}
-
 			.tooltip {
 			  display: none;
-			  /* NEW */
-			  background: #C8C8C8;
-			  margin-left: 58px;
+			  background: #CCC;
+			  margin-left: 7px;
+			  margin-top: 14px;
 			  padding: 10px;
 			  position: absolute;
-			  z-index: 1000;
-			  /*width: 200px;
-			  height: 100px;*/
-			  opacity: 0.8;
+			  z-index: 10;
+			  opacity: 0.9;
+			  color: #000;
+			}
+			.mark-known{
+			    cursor: pointer;
+				background-color: #000;
+				border: 1px solid #fff;
+				border-radius: 5px;
+				padding: 5px 2px;
+				font-size: 9px;
+				margin: 1px;
+				vertical-align: bottom;
 			}
 		</style>
 	</head>
