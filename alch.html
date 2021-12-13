@@ -511,14 +511,7 @@
 				makeNextCombos([], 0, comboLength);
 				return results;
 			}
-			
-			// var plantableIngredients = ["Bleeding Crown","Blisterwort","Blue Mountain Flower","Canis Root","Creep Cluster","Deathbell","Dragon's Tongue","Fly Amanita","Giant Lichen",
-			// 							"Glowing Mushroom","Grass Pod","Imp Stool","Jazbay Grapes","Juniper Berries","Lavender","Mora Tapinella","Namira's Rot",
-			// 							"Nightshade","Purple Mountain Flower","Red Mountain Flower","Scaly Pholiota","Snowberries","Swamp Fungal Pod",
-			// 							"Thistle Branch","Tundra Cotton","Wheat","White Cap"];
-			// var plantable = {};
-			// for(let i=0;i<plantableIngredients.length;i++)
-			// 	plantable[plantableIngredients[i]] = 1;
+
 			var plantable = {"Bleeding Crown":1,"Blisterwort":1,"Blue Mountain Flower":1,"Canis Root":1,"Creep Cluster":1,"Deathbell":1,"Dragon's Tongue":1,"Fly Amanita":1,"Giant Lichen":1,"Glowing Mushroom":1,"Grass Pod":1,"Imp Stool":1,"Jazbay Grapes":1,"Juniper Berries":1,"Lavender":1,"Mora Tapinella":1,"Namira's Rot":1,"Nightshade":1,"Purple Mountain Flower":1,"Red Mountain Flower":1,"Scaly Pholiota":1,"Snowberries":1,"Swamp Fungal Pod":1,"Thistle Branch":1,"Tundra Cotton":1,"Wheat":1,"White Cap":1};
 
 			function changeAnySkill(){				
@@ -531,10 +524,8 @@
 				skills.Alchemist_Perk = document.getElementById('alchemist_perk').value * 1;
 				window.localStorage.setItem('skills', JSON.stringify(skills));
 				calcRecipies();
-			}			
-			function changeFilter(e){
-				calcRecipies();
 			}
+			
 			function changePreset(e){
 				if(e.value == "Plantable"){
 					// Brute force
@@ -568,6 +559,7 @@
 					calcRecipies();
 				}
 			}
+			
 			function changeTwoIngedientsOnly(checked){
 				console.log('2 only: ' + checked)
 			}
@@ -714,8 +706,6 @@
 			<select id="required_effect" onchange="calcRecipies()">
 				<option>None</option>
 			</select>
-
-
 
 			<span>Fortify</span>
 			<input type="number" id="alchemy_fortify" min="-100" max="100" onchange="changeAnySkill()" value="0">
