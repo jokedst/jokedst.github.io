@@ -42,6 +42,35 @@ function row2obj(tr){
 }
 row2obj(t)
 
+function row2obj(tr){
+	let ret = {};
+	ret.name = tr.children[1].firstElementChild.innerText;
+	ret.code = tr.children[1].lastElementChild.innerText;
+	ret.where = tr.children[2].innerText;
+	ret.value = tr.nextElementSibling.children[4].innerText * 1;
+	ret.weight = tr.nextElementSibling.children[5].innerText * 1;
+	ret.merchants = tr.nextElementSibling.children[6].innerText || 'None';
+	
+	ret.effects = [];
+	let effects = [...tr.nextElementSibling.children].slice(0,4);
+	for(let i=0;i<4;i++){
+		let effect = effects[i];
+		if(effect.innerText.indexOf('(') == -1)
+			ret.effects.push(effect.innerText);
+		else{
+			let mods = [...effect.querySelectorAll('span')];
+			for(let m=0;m<mods.length;m++){
+				let mod = mods[m];
+				switch(mod.nextElementSibling.title)
+			}
+		}
+	}
+	
+	ret.effects = [...tr.nextElementSibling.children].slice(0,4).map(x=>x.innerText.trim());
+	return ret;
+}
+
+
 
  [...tbody.querySelectorAll('td[style="width:1px; padding:1px"]')].map(x=>x.parentElement)
  
@@ -69,4 +98,5 @@ row2obj(t)
 	weight: tr.nextElementSibling.children[5].innerText * 1,
 	merchants: tr.nextElementSibling.children[6].innerText || 'None',
 	effects: [...tr.nextElementSibling.children].slice(0,4).map(x=>x.innerText.trim())
-	})))
+	}))
+	
