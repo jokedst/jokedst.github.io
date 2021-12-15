@@ -673,6 +673,30 @@
 				margin: 1px;
 				vertical-align: bottom;
 			}
+			.ui span{
+				border: 1px solid #555;
+				border-radius: 5px 0px 0px 5px;
+				display: inline-block;
+				height: 20px;
+				margin-right: -5;
+				background-color: #eee;
+				padding: 1px 4px;
+				background: linear-gradient(#f1f1f1, #ddd);
+			}
+			.ui input[type="number"], select{
+				height: 24px;
+				vertical-align: bottom;
+				border-radius: 0px 5px 5px 0px;
+				border: 1px solid #333;
+			}
+			.ui em{
+				height: 22px;
+				vertical-align: bottom;
+				border-radius: 0px 5px 5px 0px;
+				border: 1px solid #333;
+				display: inline-block;
+				margin-left: -0.5;
+			}
 		</style>
 	</head>
 	<body>
@@ -710,15 +734,15 @@
 			<span>Fortify</span>
 			<input type="number" id="alchemy_fortify" min="-100" max="100" onchange="changeAnySkill()" value="0">
 			<span>Physician</span>
-			<input type="checkbox" onchange="changeAnySkill()" id='physician_chk'/>
+			<em><input type="checkbox" onchange="changeAnySkill()" id='physician_chk'/></em>
 			<span>Benefactor</span>
-			<input type="checkbox" onchange="changeAnySkill()" id='benefactor_chk'/>
+			<em><input type="checkbox" onchange="changeAnySkill()" id='benefactor_chk'/></em>
 			<span>Poisoner</span>
-			<input type="checkbox" onchange="changeAnySkill()" id='poisoner_chk'/>
+			<em><input type="checkbox" onchange="changeAnySkill()" id='poisoner_chk'/></em>
 			<span>Purity</span>
-			<input type="checkbox" onchange="changeAnySkill()" id='purity_chk'/>
+			<em><input type="checkbox" onchange="changeAnySkill()" id='purity_chk'/></em>
 			<span>2 ingr only</span>
-			<input type="checkbox" onchange="calcRecipies()" id='twoIngr_chk'/>
+			<em><input type="checkbox" onchange="calcRecipies()" id='twoIngr_chk'/></em>
 		</div>
 		<div class="container">
 			<div id="leftdiv">
