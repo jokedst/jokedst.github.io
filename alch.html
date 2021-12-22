@@ -452,7 +452,9 @@
 					label.onclick = labelClick;
 					label.name = ingr.name;
 					
-					create('span',label,'tooltip',ingr.where + '</br>' + ingr.effectsClean[0] + '</br>' + ingr.effectsClean[1] + '</br>' + ingr.effectsClean[2] + '</br>' + ingr.effectsClean[3]);
+					create('span',label,'tooltip',ingr.where + '</br>' 
+					+ (ingr.groups?.length>0 ? '('+ingr.groups[0]+')<br>' : '')
+					+ ingr.effectsClean[0] + '</br>' + ingr.effectsClean[1] + '</br>' + ingr.effectsClean[2] + '</br>' + ingr.effectsClean[3]);
 					
 					elem.appendChild(label);
 
@@ -461,7 +463,11 @@
 						let index = i;
 						chk.type = "checkbox";
 						chk.title = ingr.effectsClean[i];						
-						chk.onclick = x=>chkClick(index,x);						
+						chk.onclick = x=>chkClick(index,x);
+
+						// <!-- chk.className = "has-tooltip"; -->
+						// <!-- create('span',chk,'tooltip',ingr.effectsClean[i]); -->
+						
 						elem.appendChild(chk);
 					}
 
@@ -544,6 +550,20 @@
 						if(included)
 							removeIngredient(label, true);
 					}
+					calcRecipies();
+				}else if(e.value == "All non-unique"){
+					let count = 0;
+					for(let div = document.getElementById('leftdiv').firstElementChild; div ;div = div.nextElementSibling){
+						count++;
+						let label = div.firstElementChild;
+						let included = label.classList.contains('included');
+						let shouldBe = !(ingrLookup[label.name]?.groups?.indexOf("Unique/Quest") > -1)
+						if(included && !shouldBe)
+							removeIngredient(label, true);
+						else if(!included && shouldBe)
+							includeIngredient(label, true);
+					}
+					console.log('found ingredients: '+count);
 					calcRecipies();
 				}else if(e.value == "All"){
 					for(let div = document.getElementById('leftdiv').firstElementChild; div ;div = div.nextElementSibling){					
@@ -718,6 +738,7 @@
 			<select id="preset" onchange="changePreset(this)">
 				<option>None</option>
 				<option>Plantable</option>
+				<option>All non-unique</option>
 				<option>All</option>
 			</select>
 			<span>Show</span>
