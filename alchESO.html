@@ -1,0 +1,772 @@
+<html>
+	<head>
+		<script type="text/javascript" src="alchemyESO.js"></script>
+		<script type="text/javascript">
+			// TODO
+			// * Make wanted effects ingredients clickable
+			//   - When you learn it (DONE)
+			//   - Maybe an extra button for when you run out? (Done, but sux because it recalcs, so you can't click all you lernt)
+		 	var includedIngredients = {};
+		 	var ingrLookup = {};
+		 	var effectLookup = {};
+		 	var wantedEffects = {};
+			var unfilteredPotions;
+			var skills = {Alchemy_Skill: 50, Fortify_Alchemy: 0, Alchemist_Perk: 40};
+
+		 	ingredients.sort((a,b) => a.name.localeCompare(b.name));
+
+			// Parse the ingredients and put in lookups
+		 	for(let i=0;i<ingredients.length;i++){
+		 		ingrLookup[ingredients[i].name] = ingredients[i];
+		 		ingredients[i].effectsClean = ingredients[i].effects.map(x => x.split('(')[0].trim());
+				ingredients[i].effect = {};
+				
+				// Parse the strange ingredient effects into structs
+				for(let j=0;j<4;j++){
+					let effect = ingredients[i].effects[j];
+					function getVal(regex) {
+						let result = regex.exec(effect);
+						return (result && result.length == 3) ? Number(result[2]) : 1;
+					}
+					
+					ingredients[i].effect[ingredients[i].effectsClean[j]] =  {
+						effect: ingredients[i].effectsClean[j], 
+						cost: ingredients[i].cost,
+						deltaDur: getVal(/(.*) \(([\.\d]+)dur\)/),
+						durDivider: getVal(/(.*) \(([\.\d]+)durdiv\)/),
+						magnitude: getVal(/(.*) \(([\.\d]+)×\)/),
+						magnitudeDivider: getVal(/(.*) \(([\.\d]+)×div\)/),
+						gold: 1 //getVal(/(.*) \(([\.\d]+)€\)/)
+					};
+				}
+		 	}
+
+		 	function includeIngredient(label, noRecalc){
+		 		if(label.classList.contains('included'))
+		 			return;
+		 		label.classList.add('included');
+
+		 		let ingr = ingrLookup[label.name];
+				includedIngredients[label.name] = ingr;
+				for(let i=0;i<4;i++){
+					let effect = ingr.effectsClean[i];
+					if(!effectLookup.hasOwnProperty(effect))
+						effectLookup[effect] = {};
+					effectLookup[effect][ingr.name] = ingr;
+				}
+				if(!noRecalc)
+					calcRecipies();
+		 	}
+
+		 	function removeIngredient(label, noRecalc){
+		 		if(!label.classList.contains('included'))
+		 			return;
+				let checkboxControl = label.nextElementSibling;
+				for(let i=0;i<4;i++){
+					let effect = ingrLookup[label.name].effectsClean[i];
+					delete effectLookup[effect][label.name];
+
+					if(Object.keys(effectLookup[effect]).length == 0)
+						delete effectLookup[effect];
+						
+					if(checkboxControl.checked){
+						checkboxControl.checked = false;
+						chkClick(i,{currentTarget:checkboxControl}, true);
+					}
+					checkboxControl = checkboxControl.nextElementSibling;
+				}
+				label.classList.remove('included');
+				delete includedIngredients[label.name];
+				if(!noRecalc)
+					calcRecipies();
+		 	}
+
+			function labelClick(t){
+				let included = this.classList.contains('included');
+				if(included)
+					removeIngredient(this);
+				else
+					includeIngredient(this);
+			}
+
+			function chkClick(index,x, noRecalc){
+				let ingredientName = x.currentTarget.parentNode.firstElementChild.name;
+				let included = x.currentTarget.parentNode.firstElementChild.classList.contains('included');
+				if(!included) includeIngredient(x.currentTarget.parentNode.firstElementChild);
+
+				let effect = x.currentTarget.title;
+				if(x.currentTarget.checked){
+					if(!wantedEffects.hasOwnProperty(effect))
+						wantedEffects[effect] = {};
+					wantedEffects[effect][ingredientName] = 1;
+				}else{
+					delete wantedEffects[effect][ingredientName];
+					if(Object.keys(wantedEffects[effect]).length == 0)
+						delete wantedEffects[effect];
+				}
+
+				if(!noRecalc)
+					calcRecipies();
+				//console.log('clickety '+index + ': ' + x.currentTarget.title + ' on ' + ingredientName + ' -> ' + x.currentTarget.checked);
+			}
+			
+			function calcRecipies(){
+				let timerStart = performance.now();
+				let rightdiv = document.getElementById('rightdiv');
+				while(rightdiv.firstChild && rightdiv.removeChild(rightdiv.firstChild));
+				
+				// List all wanted effects first (if any). Calc list first, then sort, then show.
+				const possible = [];
+				for(let wanted in wantedEffects){
+					if(Object.keys(effectLookup[wanted]).length > 1){						
+						let wantedDiv = document.createElement("div");
+						wantedDiv.importance = 0;
+						wantedDiv.className = "wanted-effect";
+
+						create('div', wantedDiv, 'found-title', wanted);
+						const wantedIngredientsCount = Object.keys(wantedEffects[wanted]).length;
+						const ingrCheckboxes = [];
+
+						// If only one ingredient is wanted, clicking it's checkbox makes it "known"
+						// If there is two or three, clicking all, or clicking one/two + "KNOW" should make them "known"
+						// If there is more than three, you have to click the "KNOW"-button when done. Or do you? Perhaps when clicking all we should just assume all is known and DOIT
+						// => IF ALL chekcboxes are checked, automatically set them as known. Otherwise the "KNOW" button has to be clicked.
+
+						for(let ingredient in wantedEffects[wanted]){
+							let labelId = 'label-' + ingredient;
+							let labelSpan = document.getElementById(labelId);
+							let ingrDiv = create('span', wantedDiv, 'unknown', ingredient);
+							ingrDiv.name = ingredient;
+							let ingrChk = create('input', ingrDiv);
+							ingrCheckboxes.push(ingrChk);
+							ingrChk.type = "checkbox";
+							ingrChk.onclick = e => {
+								e.stopPropagation();
+								
+								if(ingrCheckboxes.every(c => c.checked)){
+									// All are checked. Mark all as known.
+									for(let ci = 0; ci < ingrCheckboxes.length; ci++){
+										let ingredientName = ingrCheckboxes[ci].parentNode.name;
+										let labelSpan2 = document.getElementById('label-' + ingredientName);
+										let chk = labelSpan2.nextElementSibling;
+										for(let i = 0; i < 4; i++){
+											if(chk.title == wanted){
+												chk.checked=false;
+												chkClick(i,{currentTarget:chk});
+												break;
+											}
+											chk = chk.nextElementSibling;
+										}
+									}
+								}
+							};
+							ingrDiv.onclick = () => removeIngredient(document.getElementById(labelId));
+							wantedDiv.importance++;
+						}
+						
+						// Create a button to mark effecs as "known" on an ingredient, i.e. after you lern it
+						if(wantedIngredientsCount > 1){
+							let knownButton = create('span', wantedDiv, 'mark-known', 'KNOW');
+							knownButton.title = "Mark checked ingredients as known";
+							knownButton.onclick = e => {
+								for(let ci = 0; ci < ingrCheckboxes.length; ci++){
+									if(ingrCheckboxes[ci].checked){
+										let ingredientName = ingrCheckboxes[ci].parentNode.name;
+										let labelSpan2 = document.getElementById('label-' + ingredientName);
+										let chk = labelSpan2.nextElementSibling;
+										for(let i = 0; i < 4; i++){
+											if(chk.title == wanted){
+												chk.checked=false;
+												chkClick(i,{currentTarget:chk});
+												break;
+											}
+											chk = chk.nextElementSibling;
+										}
+									}
+								}
+							};
+						}
+						
+						wantedDiv.appendChild(document.createElement("br"));
+						for(let ingredient in effectLookup[wanted]){
+							let labelId = 'label-'+ingredient;
+							if(!wantedEffects[wanted].hasOwnProperty(ingredient)){
+								create('span', wantedDiv, 'known', ingredient)
+									.onclick = () => removeIngredient(document.getElementById(labelId));
+							}
+						}
+						possible.push(wantedDiv);
+					}
+				}
+				possible.sort((a,b) => b.importance - a.importance).forEach(x => rightdiv.appendChild(x));
+				
+				// Show most valuable recipies. There can be a lot of recipies. As in thousands. Hmm...
+				
+				// idea: 
+				// * find all pairs of ingredients that share one effect. (these are simple recipies themselves)
+				// * Find all (unique) combinations of two pairs that share one ingredient (these are the complex reciepies, and should include all 3-rec. with same effect)
+				// * Calc all effects of those ingr
+				
+				let pairs = {};
+				let pairLookup = {};
+				let triplets = {};
+				for(let effect in effectLookup){
+					if(Object.keys(effectLookup[effect]).length > 1)
+					{
+						let ingredientList = Object.keys(effectLookup[effect]).sort();
+						let effectPairs = combinations(ingredientList, 2);
+						
+						for(let i=0;i<effectPairs.length;i++){
+							const effectPair = effectPairs[i];
+							if(!pairs.hasOwnProperty(effectPair))
+							{	pairs[effectPair] = {};
+							
+								if(!pairLookup.hasOwnProperty(effectPair[0])) pairLookup[effectPair[0]] = {};
+								else{
+									// triplet(s) found! Make sure we haven't found it already though...
+									for(let third in pairLookup[effectPair[0]]){
+										let triplet = [...effectPair, third].sort();
+										triplets[triplet] = 1;
+									}
+								}
+								pairLookup[effectPair[0]][effectPair[1]] = 1;
+								
+								if(!pairLookup.hasOwnProperty(effectPair[1])) pairLookup[effectPair[1]] = {};
+								else{
+									// triplet(s) found! Make sure we haven't found it already though...
+									for(let third in pairLookup[effectPair[1]]){
+										let triplet = [...effectPair, third].sort();
+										triplets[triplet] = 1;
+									}
+								}
+								pairLookup[effectPair[1]][effectPair[0]] = 1;								
+							}
+							pairs[effectPair][effect] = effectPair;
+						}
+					}
+				}
+				
+				// Create potions of all recipies. Ignore triplets if "2 ingr only" is checked
+				let twoIngrOnly = document.getElementById('twoIngr_chk').checked;
+				let reciepies = twoIngrOnly ? [] : Object.keys(triplets).map(k => createPotion(k));
+				reciepies.push(...Object.keys(pairs).map(k => createPotion(k)));
+					
+				reciepies.sort((a,b) => b.gold - a.gold);
+				unfilteredPotions = reciepies;
+				
+				// Show recipies
+				let filter = document.getElementById('filter').value;
+				if(filter == "Pure potions only")
+					reciepies = reciepies.filter(x => !x.effects.some(e=>!e.isPotion));
+				else if(filter == "Pure poisons only")
+					reciepies = reciepies.filter(x => !x.effects.some(e=>e.isPotion));
+				let required_effect = document.getElementById('required_effect').value;
+				if(required_effect != "None")
+					reciepies = reciepies.filter(x => x.effects.some(e=>e.effect == required_effect));
+				let toShow = Math.min(reciepies.length, document.getElementById("recipie_count_to_show").value);
+
+				for(let i = 0; i < toShow; i++){
+					let recipie = reciepies[i];
+					let div = document.createElement("div");
+					div.className = "recipie-" + (recipie.isPotion ? 'potion' : 'poison');
+					create('div', div, 'found-title', recipie.name + " (" + recipie.gold + ")");
+
+					for(let r = 0; r < recipie.ingredients.length; r++)
+					{
+						let labelId = 'label-' + recipie.ingredients[r];
+						create('span',div,'unknown',recipie.ingredients[r])
+								.onclick = () => removeIngredient(document.getElementById(labelId));
+					}
+					create('br',div);
+					for(let r = 0; r < recipie.effects.length; r++)
+					{
+						let text = recipie.effects[r].text.replace('<mag>',recipie.effects[r].calcMag).replace('<dur>',recipie.effects[r].calcDur);
+						create('span',div,'effect-'+(recipie.effects[r].isPotion ? 'potion' : 'poison'), text);
+					}
+
+					rightdiv.appendChild(div)
+				}
+				
+				/*console.log(reciepies);
+				
+				console.log(pairs);
+				console.log(pairLookup);
+				console.log(triplets);
+				console.log('DONE');*/
+				console.log('calc rec time: ' + (performance.now() - timerStart).toFixed(2) + ' ms')
+			}
+
+			function create(type, parent, className, text){
+				let newObject = document.createElement(type);
+				newObject.className = className;
+				if(text) newObject.innerHTML = text;
+				parent.appendChild(newObject);
+				return newObject;
+			}
+
+			// Ripped from gerralab more or less. Had to remove jQuery.
+			function createPotion(ingredientListString){
+				// if(typeof(ingredientList) === "string") 
+				const ingredientList = ingredientListString.split(',');
+
+				// Get effects that occurs at least twice
+				const existsAlready = new Set(), effectsSet = new Set();
+				for(let i=0; i<ingredientList.length; i++){
+					let thisEffects = ingrLookup[ingredientList[i]].effectsClean;
+					for(let e = 0; e < 4; e++){
+						const thisEffect = thisEffects[e];
+						if(existsAlready.has(thisEffect))
+							effectsSet.add(thisEffect);
+						else
+							existsAlready.add(thisEffect);
+					}
+				}
+				const effects = [...effectsSet];
+				
+				let bestEffects = effects.map(e => ingredientList.map(i => ingrLookup[i].effect[e]).filter(x=>x).reduce((e1,e2) => e1.cost > e2.cost ? e1 : e2 ));
+				
+				//console.log(bestEffects);
+				let bestGold = 0, majorEffect = null;
+				
+				let potion = {gold:0};
+				
+				potion.effects = [];
+				for(let ei = 0; ei < bestEffects.length; ei++){
+					let e = bestEffects[ei];
+				//potion.effects = bestEffects.map(function(e){
+					let baseEffect = allEffects[e.effect];
+					
+					//const effect = Object.assign({}, e, baseEffect);
+					const effect = {
+						effect: e.effect,
+						isPotion: baseEffect.isPotion,
+						description: baseEffect.description,
+						fixedMagnitude: baseEffect.fixedMagnitude,
+						fixedDuration: baseEffect.fixedDuration
+					}
+					
+					effect.defMag = e.magnitude * baseEffect.baseMagnitude / e.magnitudeDivider;
+					effect.defDur = baseEffect.baseDuration * e.deltaDur / e.durDivider;
+					effect.defGold = baseEffect.baseGold * e.gold; // (1 + (((effect.gold==1)?0:effect.gold)/100));// * effect.gold;
+					effect.calcMag = effect.defMag;
+					effect.calcDur = effect.defDur;
+					effect.calcGold = effect.defGold;
+					
+					effect.enMag = effect.defMag * (skills.Alchemy_Skill/5*0.1 + 4) * (1 + skills.Fortify_Alchemy/100) * (1 + skills.Alchemist_Perk/100);
+					effect.enDur = effect.defDur * (skills.Alchemy_Skill/5*0.1 + 4) * (1 + skills.Fortify_Alchemy/100) * (1 + skills.Alchemist_Perk/100);
+					if (!baseEffect.fixedMagnitude) {
+						effect.calcMag = Math.round(effect.enMag);
+					}
+					if (!baseEffect.fixedDuration) {
+						effect.calcDur = Math.round(effect.enDur);
+					}
+					if (effect.calcMag > 0 && effect.calcDur > 0) {
+						effect.calcGold = effect.calcGold * Math.pow(effect.calcMag, 1.1) * Math.pow(effect.calcDur/10, 1.1);
+					} else if (effect.calcMag > 0) {
+						effect.calcGold = effect.calcGold * Math.pow(effect.calcMag, 1.1);
+					} else if (effect.calcDur > 0) {
+						effect.calcGold = effect.calcGold * Math.pow(effect.calcDur/10, 1.1);
+					}
+					
+					if (effect.calcGold > bestGold) {
+						bestGold = effect.calcGold;
+						majorEffect = effect;
+					}
+					
+					//return effect;
+					potion.effects.push(effect);
+				}//);
+				potion.isPotion = majorEffect.isPotion;
+				if(skills.Purity_Perk)
+					potion.effects = potion.effects.filter(e => e.isPotion == potion.isPotion);
+				
+				// Second pass now that we might have filtered some out
+				for(let ei = 0; ei < potion.effects.length; ei++){
+					let effect = potion.effects[ei];
+					    effect.calcGold = effect.defGold;
+						if (
+							(skills.Physician_Perk && (
+								effect.effect=='Restore Health' || effect.effect=='Restore Magicka' || effect.effect=='Restore Stamina' //||
+								/*effect.effect=='Regenerate Health' || effect.effect=='Regenerate Magicka' || effect.effect=='Regenerate Stamina'*/
+								))
+							) {
+							effect.enMag = effect.enMag * (1 + 25/100);
+							effect.enDur = effect.enDur * (1 + 25/100);
+						}
+						if ( (skills.Benefactor_Perk && effect.isPotion && potion.isPotion && effect.effect != "Resist Poison") || (skills.Poisoner_Perk && !effect.isPotion && !potion.isPotion && effect.effect != "Fear" && effect.effect != "Frenzy")) {
+							effect.enMag = effect.enMag * (1 + 25/100);
+							effect.enDur = effect.enDur * (1 + 25/100);
+						}
+					
+						if (!effect.fixedMagnitude) {
+							effect.calcMag = Math.round(effect.enMag);
+						}
+						if (!effect.fixedDuration) {
+							effect.calcDur = Math.round(effect.enDur);
+						}
+					
+						if (effect.calcMag > 0 && effect.calcDur > 0) {
+							effect.calcGold = effect.calcGold * Math.pow(effect.calcMag, 1.1) * Math.pow(effect.calcDur/10, 1.1);
+						} else if (effect.calcMag > 0) {
+							effect.calcGold = effect.calcGold * Math.pow(effect.calcMag, 1.1);
+						} else if (effect.calcDur > 0) {
+							effect.calcGold = effect.calcGold * Math.pow(effect.calcDur/10, 1.1);
+						}
+					
+						if (!effect.fixedMagnitude) {
+							effect.calcMag = Math.round(effect.enMag);
+						}
+						if (!effect.fixedDuration) {
+							effect.calcDur = Math.round(effect.enDur);
+						}
+					
+						//effect.text = effect.description.replace('<mag>',effect.calcMag).replace('<dur>',effect.calcDur);
+						potion.gold += effect.calcGold;
+				}
+				potion.effects = potion.effects.map(x => ({
+					text: x.description,
+					effect: x.effect,
+					isPotion: x.isPotion,
+					gold: x.calcGold,
+					calcMag: x.calcMag,
+					calcDur: x.calcDur
+				})).sort((a, b) => b.gold - a.gold);
+				potion.gold = Math.floor(potion.gold);
+				potion.name = (potion.isPotion ? 'Potion' : 'Poison') + ' of ' + majorEffect.effect;
+				potion.ingredients = ingredientList;
+				return potion;
+			}
+
+		 	window.onload = function(){
+		 		let leftdiv = document.getElementById('leftdiv');
+
+		 		for(let x=0;x < ingredients.length; x++){
+		 			let ingr = ingredients[x];
+			 		let elem = document.createElement("div");
+					elem.className = 'ingredient-div';
+
+					let label = document.createElement("span");
+					label.className = "ingredient-name has-tooltip";
+					label.id = 'label-' + ingr.name;
+					label.innerHTML = ingr.name;
+					label.onclick = labelClick;
+					label.name = ingr.name;
+					
+					create('span',label,'tooltip',ingr.where + '</br>' 
+					+ (ingr.groups?.length>0 ? '('+ingr.groups[0]+')<br>' : '')
+					+ ingr.effectsClean[0] + '</br>' + ingr.effectsClean[1] + '</br>' + ingr.effectsClean[2] + '</br>' + ingr.effectsClean[3]);
+					
+					elem.appendChild(label);
+
+					for(let i=0;i<4;i++){
+						let chk = document.createElement("input");
+						let index = i;
+						chk.type = "checkbox";
+						chk.title = ingr.effectsClean[i];						
+						chk.onclick = x=>chkClick(index,x);
+
+						// <!-- chk.className = "has-tooltip"; -->
+						// <!-- create('span',chk,'tooltip',ingr.effectsClean[i]); -->
+						
+						elem.appendChild(chk);
+					}
+
+					leftdiv.insertBefore(elem, null);
+				}
+
+				let storedSkills = JSON.parse(window.localStorage.getItem('skills'));
+				if(storedSkills)
+					skills = storedSkills;
+								
+				document.getElementById("alchemy_skill").value = skills.Alchemy_Skill;
+				document.getElementById("alchemist_perk").value = skills.Alchemist_Perk;				
+				document.getElementById('alchemy_fortify').value = skills.Fortify_Alchemy;
+				document.getElementById('benefactor_chk').checked = !!skills.Benefactor_Perk;
+				document.getElementById('physician_chk').checked = !!skills.Physician_Perk;
+				document.getElementById('purity_chk').checked = !!skills.Purity_Perk;
+				document.getElementById('poisoner_chk').checked = !!skills.Poisoner_Perk;
+				
+				let select = document.getElementById('required_effect');
+				for(let effect in allEffects){
+					create('option', select, null, effect).value = effect;
+					/*var opt = document.createElement('option');
+					opt.value = effect;
+					opt.innerHTML = effect;
+					select.appendChild(opt);*/
+				}
+		 	};
+
+			function combinations(sourceArray, comboLength) {
+				if (comboLength > sourceArray.length) return [];
+				const results = []; 
+
+				function makeNextCombos(workingCombo, currentIndex, remainingCount) {
+					for (let i = currentIndex; i < sourceArray.length; i++) {
+						const next = [...workingCombo, sourceArray[i]];
+						if (remainingCount == 1)
+							results.push(next);
+						else
+							makeNextCombos(next, i + 1, remainingCount - 1);
+					}
+				}
+
+				makeNextCombos([], 0, comboLength);
+				return results;
+			}
+
+			var plantable = {"Bleeding Crown":1,"Blisterwort":1,"Blue Mountain Flower":1,"Canis Root":1,"Creep Cluster":1,"Deathbell":1,"Dragon's Tongue":1,"Fly Amanita":1,"Giant Lichen":1,"Glowing Mushroom":1,"Grass Pod":1,"Imp Stool":1,"Jazbay Grapes":1,"Juniper Berries":1,"Lavender":1,"Mora Tapinella":1,"Namira's Rot":1,"Nightshade":1,"Purple Mountain Flower":1,"Red Mountain Flower":1,"Scaly Pholiota":1,"Snowberries":1,"Swamp Fungal Pod":1,"Thistle Branch":1,"Tundra Cotton":1,"Wheat":1,"White Cap":1};
+
+			function changeAnySkill(){				
+				skills.Fortify_Alchemy = document.getElementById('alchemy_fortify').value * 1;
+				skills.Benefactor_Perk = document.getElementById('benefactor_chk').checked;
+				skills.Physician_Perk = document.getElementById('physician_chk').checked;
+				skills.Purity_Perk = document.getElementById('purity_chk').checked;
+				skills.Poisoner_Perk = document.getElementById('poisoner_chk').checked;
+				skills.Alchemy_Skill = document.getElementById('alchemy_skill').value * 1;
+				skills.Alchemist_Perk = document.getElementById('alchemist_perk').value * 1;
+				window.localStorage.setItem('skills', JSON.stringify(skills));
+				calcRecipies();
+			}
+			
+			function changePreset(e){
+				if(e.value == "Plantable"){
+					// Brute force
+					let count = 0;
+					for(let div = document.getElementById('leftdiv').firstElementChild; div ;div = div.nextElementSibling){
+						count++;
+						let label = div.firstElementChild;
+						let included = label.classList.contains('included');
+						if(included && !plantable[label.name])
+							removeIngredient(label, true);
+						else if(plantable[label.name])
+							includeIngredient(label, true);
+					}
+					console.log('found ingredients: '+count);
+					calcRecipies();
+				}else if(e.value == "None"){
+					for(let div = document.getElementById('leftdiv').firstElementChild; div ;div = div.nextElementSibling){					
+						let label = div.firstElementChild;
+						let included = label.classList.contains('included');
+						if(included)
+							removeIngredient(label, true);
+					}
+					calcRecipies();
+				}else if(e.value == "All non-unique"){
+					let count = 0;
+					for(let div = document.getElementById('leftdiv').firstElementChild; div ;div = div.nextElementSibling){
+						count++;
+						let label = div.firstElementChild;
+						let included = label.classList.contains('included');
+						let shouldBe = !(ingrLookup[label.name]?.groups?.indexOf("Unique/Quest") > -1)
+						if(included && !shouldBe)
+							removeIngredient(label, true);
+						else if(!included && shouldBe)
+							includeIngredient(label, true);
+					}
+					console.log('found ingredients: '+count);
+					calcRecipies();
+				}else if(e.value == "All"){
+					for(let div = document.getElementById('leftdiv').firstElementChild; div ;div = div.nextElementSibling){					
+						let label = div.firstElementChild;
+						let included = label.classList.contains('included');
+						if(!included)
+							includeIngredient(label, true);
+					}
+					calcRecipies();
+				}
+			}
+			
+			function changeTwoIngedientsOnly(checked){
+				console.log('2 only: ' + checked)
+			}
+		</script>
+		<style type="text/css">
+		 	body{
+		 		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+		 	}
+		 	.ingredient-name {
+			    vertical-align: text-top;
+			    cursor: pointer;
+			    margin: 2px 3px;
+
+		 		background-color: #e5e5e5;
+    			color: #000000;
+			    font-size: 11px;
+			    text-shadow: none;
+
+			    padding: 1px 4px 2px;
+			    border-radius: 3px;
+
+			    font-weight: bold;
+			    line-height: 14px;
+		 	}
+		 	.ingredient-div{
+		 		margin: 3px;
+				white-space: nowrap;
+		 	}
+		 	.ingredient-div input{
+		 		margin: 0px 2px;
+			    vertical-align: text-top;
+		 	}
+		 	.included {
+			    background-color: #3a87ad;
+			    color: #ffffff;
+		 	}
+		 	.container{
+		 		display: flex;
+		 	}
+		 	#leftdiv{
+		 	}
+		 	#rightdiv{
+		 	}
+		 	.wanted-effect{
+			    border-radius: 5px;
+			    line-height: 25px;
+			    background-color: #172d99;
+			    color: #fff;
+		 	}
+		 	.recipie-poison{
+			    border-radius: 5px;
+			    line-height: 25px;
+			    background-color: #991732;
+			    color: #fff;
+		 	}
+		 	.recipie-potion{
+			    border-radius: 5px;
+			    line-height: 25px;
+			    background-color: #0a8000;
+			    color: #fff;
+		 	}
+
+		 	.known{
+		 		background-color: #fdd;
+		 		margin: 3px;
+			    padding: 2px;
+			    border-radius: 5px;
+			    color: #000;
+		 	}
+		 	.unknown{
+		 		background-color: #dfd;
+		 	    margin: 3px;
+			    padding: 2px;
+			    border-radius: 5px;
+			    color: #000;
+		 	}
+		 	.found-title{
+		 		font-size: larger;
+    			margin: 5px;
+		 	}
+			.effect-potion{
+				color: #bdfcc7;
+			}
+			.effect-poison{
+				color: #fab6b6;
+			}
+			.ui input[type="number"]{
+				width: 45px;
+			}
+			.has-tooltip:hover .tooltip {
+			  display: inherit;
+			}
+			.tooltip {
+			  display: none;
+			  background: #CCC;
+			  margin-left: 7px;
+			  margin-top: 14px;
+			  padding: 10px;
+			  position: absolute;
+			  z-index: 10;
+			  opacity: 0.9;
+			  color: #000;
+			}
+			.mark-known{
+			    cursor: pointer;
+				background-color: #000;
+				border: 1px solid #fff;
+				border-radius: 5px;
+				padding: 5px 2px;
+				font-size: 9px;
+				margin: 1px;
+				vertical-align: bottom;
+			}
+			.ui span{
+				border: 1px solid #555;
+				border-radius: 5px 0px 0px 5px;
+				display: inline-block;
+				height: 20px;
+				margin-right: -5;
+				background-color: #eee;
+				padding: 1px 4px;
+				background: linear-gradient(#f1f1f1, #ddd);
+			}
+			.ui input[type="number"], select{
+				height: 24px;
+				vertical-align: bottom;
+				border-radius: 0px 5px 5px 0px;
+				border: 1px solid #333;
+			}
+			.ui em{
+				height: 22px;
+				vertical-align: bottom;
+				border-radius: 0px 5px 5px 0px;
+				border: 1px solid #333;
+				display: inline-block;
+				margin-left: -0.5;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="ui">
+			<span>Skill</span>
+			<input type="number" id="alchemy_skill" min="0" max="100" onchange="changeAnySkill()">
+			<span>Perk</span>
+			<select id="alchemist_perk" onchange="changeAnySkill()">
+				<option>0</option>
+				<option>20</option>
+				<option>40</option>
+				<option>60</option>
+				<option>80</option>
+				<option>100</option>
+			</select>
+			<span>Filter</span>
+			<select id="filter" onchange="calcRecipies()">
+				<option>None</option>
+				<option>Pure potions only</option>
+				<option>Pure poisons only</option>
+			</select>
+			<span>Preset</span>
+			<select id="preset" onchange="changePreset(this)">
+				<option>None</option>
+				<option>Plantable</option>
+				<option>All non-unique</option>
+				<option>All</option>
+			</select>
+			<span>Show</span>
+			<input type="number" id="recipie_count_to_show" min="1" max="10000" onchange="calcRecipies()" value="30">
+			<span>Required</span>
+			<select id="required_effect" onchange="calcRecipies()">
+				<option>None</option>
+			</select>
+
+			<span>Fortify</span>
+			<input type="number" id="alchemy_fortify" min="-100" max="100" onchange="changeAnySkill()" value="0">
+			<span>Physician</span>
+			<em><input type="checkbox" onchange="changeAnySkill()" id='physician_chk'/></em>
+			<span>Benefactor</span>
+			<em><input type="checkbox" onchange="changeAnySkill()" id='benefactor_chk'/></em>
+			<span>Poisoner</span>
+			<em><input type="checkbox" onchange="changeAnySkill()" id='poisoner_chk'/></em>
+			<span>Purity</span>
+			<em><input type="checkbox" onchange="changeAnySkill()" id='purity_chk'/></em>
+			<span>2 ingr only</span>
+			<em><input type="checkbox" onchange="calcRecipies()" id='twoIngr_chk'/></em>
+		</div>
+		<div class="container">
+			<div id="leftdiv">
+			</div>
+			<div id="rightdiv">
+			</div>
+		</div>
+		<div id="debug"></div>
+	</body>
+</html>
