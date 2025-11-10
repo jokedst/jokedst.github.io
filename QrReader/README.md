@@ -1,14 +1,16 @@
-# QR Code Reader PWA
+# QR & Barcode Scanner PWA
 
-A fast and simple Progressive Web App (PWA) for scanning QR codes using your device's camera.
+A fast and simple Progressive Web App (PWA) for scanning QR codes and barcodes using your device's camera.
 
 ## Features
 
 - 📱 **Installable**: Can be installed on your Android home screen as a native app
-- 📷 **Camera Access**: Uses your device's rear camera for optimal QR code scanning
-- 🔍 **Real-time Scanning**: Continuously scans for QR codes in the camera feed
+- 📷 **Camera Access**: Uses your device's rear camera for optimal scanning
+- 🔍 **Dual Scanning**: Scans both QR codes and various barcode formats
+- 📊 **Multiple Formats**: Supports UPC, EAN, Code 128, Code 39, ITF, Codabar, and more
+- 🎯 **Flexible Modes**: Choose QR only, barcode only, or scan both simultaneously
 - 🌐 **URL Detection**: Automatically detects and creates clickable links for URLs
-- 🔊 **Audio Feedback**: Plays a beep sound when a QR code is successfully scanned
+- 🔊 **Audio Feedback**: Plays a beep sound when a code is successfully scanned
 - ⚡ **Offline Support**: Works offline once installed (cached resources)
 - 🎨 **Modern UI**: Beautiful gradient design with responsive layout
 
@@ -28,15 +30,25 @@ A fast and simple Progressive Web App (PWA) for scanning QR codes using your dev
 
 ## Usage
 
-1. Tap "Start Camera" to begin scanning
-2. Point your camera at a QR code
-3. The app will automatically detect and display the QR code content
-4. If the QR code contains a URL, it will be displayed as a clickable link
-5. Tap "Stop Camera" when finished
+1. **Choose Scan Mode**: Select QR codes, barcodes, or both
+2. Tap "Start Camera" to begin scanning
+3. Point your camera at a QR code or barcode
+4. The app will automatically detect and display the code content with type
+5. If the code contains a URL, it will be displayed as a clickable link
+6. Tap "Stop Camera" when finished
+
+## Supported Barcode Formats
+
+- **UPC-A/UPC-E**: Product barcodes (retail)
+- **EAN-8/EAN-13**: European Article Numbers
+- **Code 128**: High-density barcode (logistics)
+- **Code 39**: Alphanumeric barcode
+- **ITF**: Interleaved 2 of 5 (packaging)
+- **Codabar**: Library and medical applications
 
 ## Shortcuts
 
-- **Quick Scan**: Use the "Scan QR Code" shortcut from the app icon to start scanning immediately
+- **Quick Scan**: Use the "Scan Codes" shortcut from the app icon to start scanning immediately
 
 ## Technical Details
 
@@ -45,13 +57,15 @@ This PWA includes:
 - Service Worker for offline caching
 - Camera API integration
 - jsQR library for QR code detection
+- QuaggaJS library for barcode detection
+- Flexible scanning modes (QR, barcode, or both)
 - Responsive design for mobile devices
 
 ## Privacy
 
 - No data is collected or transmitted
-- All QR code processing happens locally on your device
-- Camera access is only used for QR code scanning
+- All code processing happens locally on your device
+- Camera access is only used for QR code and barcode scanning
 
 ## Features
 

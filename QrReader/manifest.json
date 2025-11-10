@@ -1,7 +1,7 @@
 {
-  "name": "QR Code Reader",
-  "short_name": "QR Reader",
-  "description": "A fast and simple QR code scanner for your mobile device",
+  "name": "QR & Barcode Scanner",
+  "short_name": "QR Scanner",
+  "description": "A fast and simple QR code and barcode scanner for your mobile device",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
@@ -62,9 +62,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Scan QR Code",
+      "name": "Scan Codes",
       "short_name": "Scan",
-      "description": "Start scanning QR codes immediately",
+      "description": "Start scanning QR codes and barcodes immediately",
       "url": "./index.html?action=scan",
       "icons": [
         {

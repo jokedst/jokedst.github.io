@@ -7,11 +7,14 @@ const resultDiv = document.getElementById('result');
 const installPrompt = document.getElementById('installPrompt');
 const installButton = document.getElementById('installButton');
 const dismissInstall = document.getElementById('dismissInstall');
+const scanModeRadios = document.querySelectorAll('input[name="scanMode"]');
 
 let stream = null;
 let scanning = false;
 let animationFrameId = null;
 let deferredPrompt = null;
+let currentScanMode = 'qr';
+let quaggaInitialized = false;
 
 // Start camera and QR scanning
 async function startScanning() {
@@ -36,7 +39,17 @@ async function startScanning() {
         video.addEventListener('loadedmetadata', () => {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            scanQRCode();
+            
+            // Start scanning based on selected mode
+            currentScanMode = getCurrentScanMode();
+            if (currentScanMode === 'qr') {
+                scanQRCode();
+            } else if (currentScanMode === 'barcode') {
+                startBarcodeScanning();
+            } else if (currentScanMode === 'both') {
+                scanQRCode(); // QR scanning runs continuously
+                startBarcodeScanning(); // Barcode scanning runs in parallel
+            }
         });
 
     } catch (error) {
@@ -54,6 +67,9 @@ function stopScanning() {
         animationFrameId = null;
     }
 
+    // Stop barcode scanning if active
+    stopBarcodeScanning();
+
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
@@ -62,6 +78,60 @@ function stopScanning() {
     video.srcObject = null;
     startButton.disabled = false;
     stopButton.disabled = true;
+}
+
+// Get current scan mode
+function getCurrentScanMode() {
+    const checkedRadio = document.querySelector('input[name="scanMode"]:checked');
+    return checkedRadio ? checkedRadio.value : 'qr';
+}
+
+// Initialize Quagga for barcode scanning
+function initializeQuagga() {
+    if (quaggaInitialized) return Promise.resolve();
+    
+    return new Promise((resolve, reject) => {
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: video,
+                constraints: {
+                    width: video.videoWidth || 640,
+                    height: video.videoHeight || 480,
+                    facingMode: "environment"
+                }
+            },
+            decoder: {
+                readers: [
+                    "code_128_reader",
+                    "ean_reader",
+                    "ean_8_reader", 
+                    "code_39_reader",
+                    "code_39_vin_reader",
+                    "codabar_reader",
+                    "upc_reader",
+                    "upc_e_reader",
+                    "i2of5_reader"
+                ],
+                debug: {
+                    drawBoundingBox: true,
+                    showFrequency: true,
+                    drawScanline: true,
+                    showPattern: true
+                }
+            }
+        }, function(err) {
+            if (err) {
+                console.log('Quagga initialization error:', err);
+                reject(err);
+                return;
+            }
+            console.log("Quagga initialization finished. Ready to start");
+            quaggaInitialized = true;
+            resolve();
+        });
+    });
 }
 
 // Scan QR code from video feed
@@ -87,7 +157,7 @@ function scanQRCode() {
 
         if (code) {
             // QR code detected
-            showResult(code.data, true);
+            showResult(code.data, true, 'QR Code');
             
             // Draw detection box (optional - shows where QR was found)
             drawDetectionBox(canvasContext, code.location);
@@ -96,6 +166,44 @@ function scanQRCode() {
 
     // Continue scanning
     animationFrameId = requestAnimationFrame(scanQRCode);
+}
+
+// Start barcode scanning with Quagga
+async function startBarcodeScanning() {
+    try {
+        await initializeQuagga();
+        
+        // Remove any existing event listeners
+        Quagga.offDetected();
+        
+        // Add detection handler
+        Quagga.onDetected(function(result) {
+            if (scanning) {
+                const code = result.codeResult.code;
+                const format = result.codeResult.format;
+                showResult(code, true, `${format.toUpperCase()} Barcode`);
+                
+                // Draw detection box
+                const canvasContext = canvas.getContext('2d');
+                if (result.line) {
+                    drawBarcodeDetectionLine(canvasContext, result.line);
+                }
+            }
+        });
+        
+        Quagga.start();
+    } catch (error) {
+        console.error('Error starting barcode scanning:', error);
+        showResult('Error: Unable to initialize barcode scanner', false);
+    }
+}
+
+// Stop barcode scanning
+function stopBarcodeScanning() {
+    if (quaggaInitialized) {
+        Quagga.stop();
+        Quagga.offDetected();
+    }
 }
 
 // Draw a box around detected QR code
@@ -111,8 +219,18 @@ function drawDetectionBox(ctx, location) {
     ctx.stroke();
 }
 
+// Draw a line for detected barcode
+function drawBarcodeDetectionLine(ctx, line) {
+    ctx.beginPath();
+    ctx.moveTo(line[0].x, line[0].y);
+    ctx.lineTo(line[1].x, line[1].y);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#ff6b6b';
+    ctx.stroke();
+}
+
 // Display scan result
-function showResult(data, success) {
+function showResult(data, success, type = 'Code') {
     resultDiv.className = success ? 'success' : '';
     
     // Check if the data is a URL
@@ -121,19 +239,19 @@ function showResult(data, success) {
     
     if (isUrl) {
         resultDiv.innerHTML = `
-            <span class="result-label">QR Code Detected:</span>
+            <span class="result-label">${type} Detected:</span>
             <div class="result-text">
                 <a href="${data}" class="result-link" target="_blank" rel="noopener noreferrer">${data}</a>
             </div>
         `;
     } else {
         resultDiv.innerHTML = `
-            <span class="result-label">${success ? 'QR Code Detected:' : 'Status:'}</span>
+            <span class="result-label">${success ? `${type} Detected:` : 'Status:'}</span>
             <div class="result-text">${data}</div>
         `;
     }
 
-    // Optional: Play a beep sound when QR is detected
+    // Optional: Play a beep sound when code is detected
     if (success) {
         playBeep();
     }
@@ -161,6 +279,19 @@ function playBeep() {
 // Event listeners
 startButton.addEventListener('click', startScanning);
 stopButton.addEventListener('click', stopScanning);
+
+// Scan mode change handler
+scanModeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+        if (scanning) {
+            // If currently scanning, restart with new mode
+            stopScanning();
+            setTimeout(() => {
+                startScanning();
+            }, 100);
+        }
+    });
+});
 
 // Handle page visibility change (pause when tab is hidden)
 document.addEventListener('visibilitychange', () => {

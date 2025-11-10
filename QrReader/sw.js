@@ -1,9 +1,10 @@
-const CACHE_NAME = 'qr-reader-v1';
+const CACHE_NAME = 'qr-barcode-scanner-v2';
 const urlsToCache = [
   './index.html',
   './script.js',
   './manifest.json',
-  'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js'
+  'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js',
+  'https://unpkg.com/quagga@0.12.1/dist/quagga.min.js'
 ];
 
 // Install event - cache resources
