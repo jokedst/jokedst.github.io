@@ -4,10 +4,14 @@ const canvas = document.getElementById('canvas');
 const startButton = document.getElementById('startButton');
 const stopButton = document.getElementById('stopButton');
 const resultDiv = document.getElementById('result');
+const installPrompt = document.getElementById('installPrompt');
+const installButton = document.getElementById('installButton');
+const dismissInstall = document.getElementById('dismissInstall');
 
 let stream = null;
 let scanning = false;
 let animationFrameId = null;
+let deferredPrompt = null;
 
 // Start camera and QR scanning
 async function startScanning() {
@@ -163,5 +167,55 @@ document.addEventListener('visibilitychange', () => {
     if (document.hidden && scanning) {
         // Optionally pause scanning when page is hidden
         // stopScanning();
+    }
+});
+
+// PWA Install functionality
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the event so it can be triggered later
+    deferredPrompt = e;
+    // Show the install prompt
+    installPrompt.style.display = 'block';
+});
+
+installButton.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        // Clear the deferredPrompt variable
+        deferredPrompt = null;
+    }
+    // Hide the install prompt
+    installPrompt.style.display = 'none';
+});
+
+dismissInstall.addEventListener('click', () => {
+    installPrompt.style.display = 'none';
+});
+
+// Hide install prompt if app is already installed
+window.addEventListener('appinstalled', () => {
+    installPrompt.style.display = 'none';
+    console.log('PWA was installed');
+});
+
+// Auto-start scanning if accessed via shortcut
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('action') === 'scan') {
+        // Auto-start scanning after a short delay
+        setTimeout(() => {
+            startScanning();
+        }, 500);
+    }
+    
+    // Hide install prompt if already running as PWA
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+        installPrompt.style.display = 'none';
     }
 });
